@@ -1,0 +1,59 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  // output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Sport {
+  FUTEBOL
+  VOLEI
+  FIFA
+  BASQUETE
+  // 👉 futuramente só adicionar novos aqui
+}
+
+model User {
+  id               String    @id @default(uuid())
+  name             String
+  email            String    @unique
+  password         String // 🔐 será armazenado com hash (bcrypt, argon2)
+  phone            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  isEmailVerified  Boolean   @default(false)
+  verificationCode String?
+  codeExpiresAt    DateTime?
+
+  // relacionamento
+  teams Team[]
+}
+
+model Team {
+  id           String    @id @default(uuid())
+  name         String
+  sport        Sport
+  foundedAt    DateTime? // 🆕 quando o time foi fundado
+  history      String? // 🆕 breve história do time
+  hasField     Boolean   @default(false)
+  fieldName    String?
+  fieldAddress String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // FK para usuário dono
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id])
+
+  // 🔒 regra: um usuário não pode ter 2 times com o mesmo nome no mesmo esporte
+  @@unique([ownerId, name, sport])
+}
