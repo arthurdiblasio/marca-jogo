@@ -2,7 +2,8 @@
 
 'use client';
 
-import InputMask from 'react-input-mask';
+import { IMaskInput } from 'react-imask'; // 👈 Importe o hook
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -19,6 +20,8 @@ export default function RegisterPage() {
   const [hasNumber, setHasNumber] = useState(false);
   const [hasSpecialChar, setHasSpecialChar] = useState(false);
   const [isLengthValid, setIsLengthValid] = useState(false)
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
 
   const validatePassword = (pwd: string) => {
@@ -81,15 +84,16 @@ export default function RegisterPage() {
           </div>
           {/* Campo de Telefone */}
           <div>
-            <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Telefone</label>
-            {/* <input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" /> */}
-            <InputMask
-              mask="(99) 99999-9999"
-              maskChar="_"
+            <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+              Telefone
+            </label>
+            <IMaskInput
+              mask="(00) 00000-0000"
               id="phone"
-              type="tel"
+              name="phone"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onAccept={(value, mask) => setPhone(value)}
+              type="tel"
               required
               className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             />
@@ -97,14 +101,25 @@ export default function RegisterPage() {
           {/* Campo de Senha */}
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700">Senha</label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={handlePasswordChange}
-              required
-              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            />
+            <div className="relative mt-1">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={handlePasswordChange}
+                required
+                className="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm pr-10 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+              >
+                <span className="text-xl">
+                  {showPassword ? '👁️' : '🔒'}
+                </span>
+              </button>
+            </div>
             <ul className="text-sm mt-2 space-y-1">
               <li className={isLengthValid ? 'text-green-500' : 'text-gray-500'}>
                 <span className="mr-1">{isLengthValid ? '✔' : '✖'}</span> Mínimo de 8 caracteres
@@ -123,10 +138,31 @@ export default function RegisterPage() {
               </li>
             </ul>
           </div>
+
           {/* Campo de Confirmação de Senha */}
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">Confirme a Senha</label>
-            <input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+              Confirme a Senha
+            </label>
+            <div className="relative mt-1">
+              <input
+                id="confirmPassword"
+                type={showConfirmPassword ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                className="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm pr-10 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+              >
+                <span className="text-xl">
+                  {showConfirmPassword ? '👁️' : '🔒'}
+                </span>
+              </button>
+            </div>
           </div>
 
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
