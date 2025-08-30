@@ -1,3 +1,6 @@
+// 'use client';
+
+
 import "./globals.css";
 import type { Metadata } from "next";
 
@@ -20,3 +23,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
+
+
+// import { SessionProvider } from 'next-auth/react';
+
+// export default function RootLayout({ children }) {
+//   return (
+//     <html lang="en">
+//       <body>
+//         <SessionProvider>
+//           {children}
+//         </SessionProvider>
+//       </body>
+//     </html>
+//   );
+// }
