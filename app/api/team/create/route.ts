@@ -17,10 +17,11 @@ export async function POST(request: Request) {
         { status: 401 }
       );
     }
-
     const {
       name,
-      sport,
+      abbreviation,
+      logo,
+      sportId,
       foundedAt,
       history,
       hasField,
@@ -28,7 +29,6 @@ export async function POST(request: Request) {
       fieldAddress,
     } = await request.json();
 
-    // Encontre o usuário logado para pegar o ID
     const loggedInUser = await prisma.user.findUnique({
       where: { email: session.user.email },
     });
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     }
 
     // 1. Validação dos dados
-    if (!name || !sport) {
+    if (!name || !sportId) {
       return NextResponse.json(
         { error: "Nome e esporte são obrigatórios." },
         { status: 400 }
@@ -51,10 +51,10 @@ export async function POST(request: Request) {
     // 2. Verifique se o usuário já tem um time com o mesmo nome e esporte
     const existingTeam = await prisma.team.findUnique({
       where: {
-        ownerId_name_sport: {
+        ownerId_name_sportId: {
           ownerId: loggedInUser.id,
-          name: name,
-          sport: sport,
+          name,
+          sportId,
         },
       },
     });
@@ -70,7 +70,9 @@ export async function POST(request: Request) {
     const newTeam = await prisma.team.create({
       data: {
         name,
-        sport,
+        abbreviation,
+        logo,
+        sportId,
         ownerId: loggedInUser.id,
         foundedAt,
         history,

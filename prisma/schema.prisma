@@ -14,12 +14,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Sport {
-  FUTEBOL
-  VOLEI
-  FIFA
-  BASQUETE
-  // 👉 futuramente só adicionar novos aqui
+model Sport {
+  id   String @id @default(cuid())
+  name String @unique
+
+  teams Team[]
 }
 
 model User {
@@ -43,21 +42,23 @@ model User {
 model Team {
   id           String    @id @default(uuid())
   name         String
-  sport        Sport
-  foundedAt    DateTime? // 🆕 quando o time foi fundado
-  history      String? // 🆕 breve história do time
+  abbreviation String?
+  logo         String?
+  foundedAt    DateTime?
+  history      String?
   hasField     Boolean   @default(false)
   fieldName    String?
   fieldAddress String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  // FK para usuário dono
   ownerId String
   owner   User   @relation(fields: [ownerId], references: [id])
 
-  // 🔒 regra: um usuário não pode ter 2 times com o mesmo nome no mesmo esporte
-  @@unique([ownerId, name, sport])
+  sportId String
+  sport   Sport  @relation(fields: [sportId], references: [id])
+
+  @@unique([ownerId, name, sportId])
 }
 
 model Account {

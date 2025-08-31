@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react'; // Para checar a sessão do usuário
 import Link from 'next/link';
@@ -10,30 +10,82 @@ import Link from 'next/link';
 export default function CreateTeamPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [availableSports, setAvailableSports] = useState([]); // Estado para a lista de esportes
 
+
+  const [sportId, setSportId] = useState(''); // Estado para guardar o ID do esporte
   const [name, setName] = useState('');
-  const [sport, setSport] = useState('');
   const [foundedAt, setFoundedAt] = useState('');
   const [history, setHistory] = useState('');
   const [hasField, setHasField] = useState(false);
   const [fieldName, setFieldName] = useState('');
   const [fieldAddress, setFieldAddress] = useState('');
+  const [logo, setLogo] = useState('');
+  const [abbreviation, setAbbreviation] = useState('');
+  const [logoFile, setLogoFile] = useState<File | null>(null); // 👈 Novo estado para o arquivo
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null); // 👈 Novo estado
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
 
-  // Redirecionar se o usuário não estiver logado
+  useEffect(() => {
+    async function fetchSports() {
+      try {
+        const response = await fetch('/api/sports');
+        const data = await response.json();
+        if (response.ok) {
+          setAvailableSports(data.sports);
+        }
+      } catch (error) {
+        console.error('Falha ao carregar esportes:', error);
+      }
+    }
+    fetchSports();
+  }, []);
+
   if (status === 'unauthenticated') {
     router.push('/login');
     return null;
   }
+
+  const handleFileUpload = async () => {
+    if (!logoFile) {
+      return null;
+    }
+    const formData = new FormData();
+    formData.append('logo', logoFile);
+
+    try {
+      const response = await fetch('/api/upload-logo', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro no upload da logo.');
+      }
+      return data.url;
+    } catch (err: any) {
+      setError(err.message);
+      return null;
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     setSuccess('');
+
+    const logoUrl = await handleFileUpload(); // 🚀 Primeiro, faz o upload
+
+    if (logoFile && !logoUrl) {
+      // Se o upload falhou, pare a submissão
+      setLoading(false);
+      return;
+    }
+
 
     try {
       const response = await fetch('/api/team/create', {
@@ -43,7 +95,9 @@ export default function CreateTeamPage() {
         },
         body: JSON.stringify({
           name,
-          sport,
+          sportId,
+          abbreviation,
+          logo: logoUrl,
           foundedAt,
           history,
           hasField,
@@ -92,21 +146,73 @@ export default function CreateTeamPage() {
               className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
-
-          {/* Esporte */}
           <div>
-            <label htmlFor="sport" className="block text-sm font-medium text-gray-700">
-              Esporte
+            <label htmlFor="abbreviation" className="block text-sm font-medium text-gray-700">
+              Abreviatura (Máx. 20 caracteres)
             </label>
             <input
-              id="sport"
+              id="abbreviation"
               type="text"
-              value={sport}
-              onChange={(e) => setSport(e.target.value)}
-              required
+              value={abbreviation}
+              onChange={(e) => setAbbreviation(e.target.value)}
+              maxLength={20}
               className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
+          <div>
+            {/* Esporte */}
+            <label htmlFor="sportId" className="block text-sm font-medium text-gray-700">
+              Esporte
+            </label>
+            <select
+              id="sportId"
+              value={sportId}
+              onChange={(e) => setSportId(e.target.value)}
+              required
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">Selecione um esporte</option>
+              {availableSports.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="logo" className="block text-sm font-medium text-gray-700">
+              Logo do Time (Opcional)
+            </label>
+            <input
+              id="logo"
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  const file = e.target.files[0];
+                  setLogoFile(file);
+
+                  // 🚀 NOVO: Cria uma URL temporária para pré-visualização
+                  const objectUrl = URL.createObjectURL(file);
+                  setLogoPreviewUrl(objectUrl);
+                } else {
+                  setLogoFile(null);
+                  setLogoPreviewUrl(null); // Limpa a pré-visualização se nenhum arquivo for selecionado
+                }
+              }}
+              className="mt-1 block w-full text-sm text-gray-500
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-md file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-blue-50 file:text-blue-700
+                  hover:file:bg-blue-100"
+            />
+          </div>
+          {logoPreviewUrl && (
+            <div className="mt-4 flex justify-center">
+              <img src={logoPreviewUrl} alt="Pré-visualização da Logo" className="h-32 w-32 object-contain rounded-md border border-gray-300" />
+            </div>
+          )}
 
           {/* Ano de Fundação */}
           <div>
@@ -194,7 +300,7 @@ export default function CreateTeamPage() {
             {loading ? 'Criando...' : 'Criar Time'}
           </button>
         </form>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }
