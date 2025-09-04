@@ -61,7 +61,7 @@ export async function POST(request: Request) {
 
     if (existingTeam) {
       return NextResponse.json(
-        { error: "Você já tem um time com este nome e esporte." },
+        { error: "Você já tem um time com este nome para o mesmo esporte." },
         { status: 409 }
       );
     }

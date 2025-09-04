@@ -18,7 +18,19 @@ model Sport {
   id   String @id @default(cuid())
   name String @unique
 
+  teams      Team[]
+  categories Category[]
+}
+
+model Category {
+  id      String @id @default(cuid())
+  name    String
+  sportId String
+
+  sport Sport  @relation(fields: [sportId], references: [id])
   teams Team[]
+
+  @@unique([sportId, name])
 }
 
 model User {
@@ -40,23 +52,25 @@ model User {
 }
 
 model Team {
-  id           String    @id @default(uuid())
+  id           String   @id @default(uuid())
   name         String
   abbreviation String?
   logo         String?
-  foundedAt    DateTime?
+  foundedAt    String?
   history      String?
-  hasField     Boolean   @default(false)
+  hasField     Boolean  @default(false)
   fieldName    String?
   fieldAddress String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   ownerId String
   owner   User   @relation(fields: [ownerId], references: [id])
 
-  sportId String
-  sport   Sport  @relation(fields: [sportId], references: [id])
+  sportId    String
+  sport      Sport     @relation(fields: [sportId], references: [id])
+  category   Category? @relation(fields: [categoryId], references: [id])
+  categoryId String?
 
   @@unique([ownerId, name, sportId])
 }

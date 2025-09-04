@@ -6,13 +6,16 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react'; // Para checar a sessão do usuário
 import Link from 'next/link';
+import { showToast } from '@/hooks/useToast'; // 👈 Importe o hook
 
 export default function CreateTeamPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [availableSports, setAvailableSports] = useState([]); // Estado para a lista de esportes
+  const [availableSports, setAvailableSports] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [categoryId, setCategoryId] = useState('');
+  const [availableCategories, setAvailableCategories] = useState([]);
 
   const [sportId, setSportId] = useState('');
   const [name, setName] = useState('');
@@ -23,13 +26,10 @@ export default function CreateTeamPage() {
   const [fieldAddress, setFieldAddress] = useState('');
   const [logo, setLogo] = useState('');
   const [abbreviation, setAbbreviation] = useState('');
-  const [logoFile, setLogoFile] = useState<File | null>(null); // 👈 Novo estado para o arquivo
-  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null); // 👈 Novo estado
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
 
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState('');
-
 
   const years = useMemo(() => {
     const currentYear = new Date().getFullYear();
@@ -40,8 +40,6 @@ export default function CreateTeamPage() {
     }
     return yearsList;
   }, [])
-
-  // app/team/create/page.tsx
 
   const fetchSuggestions = async (input) => {
     if (input.length < 3) {
@@ -56,9 +54,31 @@ export default function CreateTeamPage() {
         setShowSuggestions(true);
       }
     } catch (error) {
+      showToast('Erro ao buscar sugestões de endereço', 'error');
       console.error('Erro ao buscar sugestões:', error);
     }
   };
+
+  useEffect(() => {
+    if (sportId) {
+      async function fetchCategories() {
+        try {
+          const response = await fetch(`/api/categories?sportId=${sportId}`);
+          const data = await response.json();
+          if (response.ok) {
+            setAvailableCategories(data.categories);
+          }
+        } catch (error) {
+          showToast('Falha ao carregar categorias', 'error');
+          console.error('Falha ao carregar categorias:', error);
+        }
+      }
+      fetchCategories();
+    } else {
+      setAvailableCategories([]); // Limpa as categorias se nenhum esporte for selecionado
+      setCategoryId(''); // Reseta a categoria
+    }
+  }, [sportId]);
 
   useEffect(() => {
     async function fetchSports() {
@@ -69,6 +89,7 @@ export default function CreateTeamPage() {
           setAvailableSports(data.sports);
         }
       } catch (error) {
+        showToast('Falha ao carregar esportes', 'error');
         console.error('Falha ao carregar esportes:', error);
       }
     }
@@ -98,7 +119,7 @@ export default function CreateTeamPage() {
       }
       return data.url;
     } catch (err: any) {
-      setError(err.message);
+      showToast('Erro ao fazer upload da logo', 'error');
       return null;
     }
   };
@@ -106,17 +127,20 @@ export default function CreateTeamPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setSuccess('');
 
-    const logoUrl = await handleFileUpload(); // 🚀 Primeiro, faz o upload
+    const logoUrl = await handleFileUpload();
 
     if (logoFile && !logoUrl) {
-      // Se o upload falhou, pare a submissão
+      showToast('Erro ao fazer upload da logo, tente novamente', 'error');
       setLoading(false);
       return;
     }
 
+    if (hasField && (!fieldName || !fieldAddress)) {
+      showToast('O nome e o endereço do campo são obrigatórios se você for tiver campo.', 'error');
+      setLoading(false);
+      return;
+    }
 
     try {
       const response = await fetch('/api/team/create', {
@@ -134,21 +158,27 @@ export default function CreateTeamPage() {
           hasField,
           fieldName,
           fieldAddress,
+          categoryId
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erro ao criar o time.');
+        showToast(data.error || 'Erro ao criar o time.', 'error');
+        return;
       }
 
-      setSuccess('Time criado com sucesso!');
-      // Redireciona para o painel ou para a página do time
+      showToast('Time criado com sucesso', 'success');
+      setLogoPreviewUrl(null);
+
+
       router.push('/dashboard');
 
     } catch (err) {
-      setError(err.message);
+      console.log('Erro ao criar time', err);
+
+      showToast('Erro ao criar time', 'error');
     } finally {
       setLoading(false);
     }
@@ -210,6 +240,27 @@ export default function CreateTeamPage() {
               ))}
             </select>
           </div>
+          {sportId && availableCategories.length > 0 && (
+            <div>
+              <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700">
+                Categoria
+              </label>
+              <select
+                id="categoryId"
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                required
+                className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Selecione uma categoria</option>
+                {availableCategories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div>
             <label htmlFor="logo" className="block text-sm font-medium text-gray-700">
               Logo do Time (Opcional)
@@ -222,13 +273,11 @@ export default function CreateTeamPage() {
                 if (e.target.files && e.target.files[0]) {
                   const file = e.target.files[0];
                   setLogoFile(file);
-
-                  // 🚀 NOVO: Cria uma URL temporária para pré-visualização
                   const objectUrl = URL.createObjectURL(file);
                   setLogoPreviewUrl(objectUrl);
                 } else {
                   setLogoFile(null);
-                  setLogoPreviewUrl(null); // Limpa a pré-visualização se nenhum arquivo for selecionado
+                  setLogoPreviewUrl(null);
                 }
               }}
               className="mt-1 block w-full text-sm text-gray-500
@@ -321,7 +370,6 @@ export default function CreateTeamPage() {
                   required={hasField}
                   className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 /> */}
-                {fieldAddress}
                 <input
                   id="fieldAddress"
                   type="text"
@@ -330,7 +378,7 @@ export default function CreateTeamPage() {
                     setFieldAddress(e.target.value);
                     fetchSuggestions(e.target.value);
                   }}
-                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  onBlur={() => setShowSuggestions(false)}
                   onFocus={() => setShowSuggestions(true)}
                   required={hasField}
                   className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -340,11 +388,18 @@ export default function CreateTeamPage() {
                     {suggestions.map((s) => (
                       <li
                         key={s.place_id}
-                        onClick={() => {
-                          setFieldAddress(s.description); // 👈 Garante que o estado seja atualizado
+                        // onClick={() => {
+                        //   setFieldAddress(s.description);
+                        //   setSuggestions([]);
+                        //   setShowSuggestions(false);
+                        // }}
+                        onMouseDown={(e) => {
+                          e.preventDefault(); // Impede que o onBlur do input seja acionado
+                          setFieldAddress(s.description);
                           setSuggestions([]);
                           setShowSuggestions(false);
                         }}
+
                         className="p-2 hover:bg-gray-100 cursor-pointer"
                       >
                         {s.description}
@@ -355,9 +410,6 @@ export default function CreateTeamPage() {
               </div>
             </>
           )}
-
-          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-          {success && <p className="text-green-500 text-sm text-center">{success}</p>}
 
           <button
             type="submit"

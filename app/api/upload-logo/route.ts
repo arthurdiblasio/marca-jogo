@@ -23,20 +23,16 @@ export async function POST(request: Request) {
       );
     }
 
-    // Criar um stream de leitura do arquivo
     const buffer = Buffer.from(await file.arrayBuffer());
     const passthrough = new PassThrough();
     passthrough.end(buffer);
 
     const uploadResult = await new Promise((resolve, reject) => {
-      const uploadStream = cloudinary.uploader
-        .upload_stream(
-          { folder: "team-logos" }, // Opcional: nome da pasta no Cloudinary
-          (error, result) => {
-            if (error) return reject(error);
-            resolve(result);
-          }
-        )
+      cloudinary.uploader
+        .upload_stream({ folder: "team-logos" }, (error, result) => {
+          if (error) return reject(error);
+          resolve(result);
+        })
         .end(buffer);
     });
 
