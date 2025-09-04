@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react'; // Para checar a sessão do usuário
 import Link from 'next/link';
@@ -11,9 +11,10 @@ export default function CreateTeamPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [availableSports, setAvailableSports] = useState([]); // Estado para a lista de esportes
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
-
-  const [sportId, setSportId] = useState(''); // Estado para guardar o ID do esporte
+  const [sportId, setSportId] = useState('');
   const [name, setName] = useState('');
   const [foundedAt, setFoundedAt] = useState('');
   const [history, setHistory] = useState('');
@@ -28,6 +29,36 @@ export default function CreateTeamPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
+
+
+  const years = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const startYear = 1900;
+    const yearsList = [];
+    for (let year = currentYear; year >= startYear; year--) {
+      yearsList.push(year);
+    }
+    return yearsList;
+  }, [])
+
+  // app/team/create/page.tsx
+
+  const fetchSuggestions = async (input) => {
+    if (input.length < 3) {
+      setSuggestions([]);
+      return;
+    }
+    try {
+      const response = await fetch(`/api/google-places?input=${encodeURIComponent(input)}`);
+      const data = await response.json();
+      if (response.ok) {
+        setSuggestions(data.predictions);
+        setShowSuggestions(true);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar sugestões:', error);
+    }
+  };
 
   useEffect(() => {
     async function fetchSports() {
@@ -219,13 +250,19 @@ export default function CreateTeamPage() {
             <label htmlFor="foundedAt" className="block text-sm font-medium text-gray-700">
               Ano de Fundação
             </label>
-            <input
+            <select
               id="foundedAt"
-              type="number"
               value={foundedAt}
               onChange={(e) => setFoundedAt(e.target.value)}
               className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            />
+            >
+              <option value="">Selecione um ano</option>
+              {years.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* História do Time */}
@@ -276,14 +313,45 @@ export default function CreateTeamPage() {
                 <label htmlFor="fieldAddress" className="block text-sm font-medium text-gray-700">
                   Endereço do Campo
                 </label>
-                <input
+                {/* <input
                   id="fieldAddress"
                   type="text"
                   value={fieldAddress}
                   onChange={(e) => setFieldAddress(e.target.value)}
                   required={hasField}
                   className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                /> */}
+                {fieldAddress}
+                <input
+                  id="fieldAddress"
+                  type="text"
+                  value={fieldAddress}
+                  onChange={(e) => {
+                    setFieldAddress(e.target.value);
+                    fetchSuggestions(e.target.value);
+                  }}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  onFocus={() => setShowSuggestions(true)}
+                  required={hasField}
+                  className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
+                {showSuggestions && suggestions.length > 0 && (
+                  <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1">
+                    {suggestions.map((s) => (
+                      <li
+                        key={s.place_id}
+                        onClick={() => {
+                          setFieldAddress(s.description); // 👈 Garante que o estado seja atualizado
+                          setSuggestions([]);
+                          setShowSuggestions(false);
+                        }}
+                        className="p-2 hover:bg-gray-100 cursor-pointer"
+                      >
+                        {s.description}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </>
           )}

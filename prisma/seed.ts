@@ -4,7 +4,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const sports = ["FUTEBOL", "VOLEI", "FIFA", "BASQUETE"];
+const sports = ["Futebol", "Vôlei", "FIFA", "Basquete"];
 
 async function main() {
   console.log("Iniciando o processo de seed...");
