@@ -4,7 +4,9 @@
 import { SessionProvider } from 'next-auth/react';
 import "./globals.css";
 import { Toaster } from 'react-hot-toast';
-import Sidebar from '@/components/Sidebar'; // 👈 Importe o Sidebar
+import Sidebar from '@/components/Sidebar';
+import { excludedRoutes } from '@/lib/sidebar';
+import { usePathname } from 'next/navigation';
 
 // import type { Metadata } from "next";
 
@@ -31,6 +33,9 @@ import Sidebar from '@/components/Sidebar'; // 👈 Importe o Sidebar
 
 
 export default function RootLayout({ children }) {
+  const pathname = usePathname()
+  const showSidebar = !excludedRoutes.includes(pathname);
+
   return (
     <html lang="en">
       <body>
@@ -40,8 +45,8 @@ export default function RootLayout({ children }) {
         </SessionProvider> */}
         <SessionProvider>
           <div className="flex">
-            <Sidebar />
-            <main className="flex-1 md:ml-20">
+            {showSidebar && <Sidebar />}
+            <main className={`flex-1 ${showSidebar ? 'md:ml-20' : ''}`}>
               {children}
             </main>
           </div>
