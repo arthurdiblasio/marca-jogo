@@ -1,36 +1,39 @@
 // app/team/create/page.tsx
 
-'use client';
+"use client";
 
-import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react'; // Para checar a sessão do usuário
-import Link from 'next/link';
-import { showToast } from '@/hooks/useToast'; // 👈 Importe o hook
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react"; // Para checar a sessão do usuário
+import Link from "next/link";
+import { showToast } from "@/hooks/useToast"; // 👈 Importe o hook
 
-export default function CreateTeamPage() {
+export default function TeamFormPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+
+  const params = useParams();
+  const teamId = params.teamId?.[0] || null;
+
   const [availableSports, setAvailableSports] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [categoryId, setCategoryId] = useState('');
+  const [categoryId, setCategoryId] = useState("");
   const [availableCategories, setAvailableCategories] = useState([]);
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
-  const [sportId, setSportId] = useState('');
-  const [name, setName] = useState('');
-  const [foundedAt, setFoundedAt] = useState('');
-  const [history, setHistory] = useState('');
+  const [sportId, setSportId] = useState("");
+  const [name, setName] = useState("");
+  const [foundedAt, setFoundedAt] = useState("");
+  const [history, setHistory] = useState("");
   const [hasField, setHasField] = useState(false);
-  const [fieldName, setFieldName] = useState('');
-  const [fieldAddress, setFieldAddress] = useState('');
-  const [logo, setLogo] = useState('');
-  const [abbreviation, setAbbreviation] = useState('');
+  const [fieldName, setFieldName] = useState("");
+  const [fieldAddress, setFieldAddress] = useState("");
+  const [logo, setLogo] = useState("");
+  const [abbreviation, setAbbreviation] = useState("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
-  const [teamAddress, setTeamAddress] = useState('');
-
+  const [teamAddress, setTeamAddress] = useState("");
 
   const [loading, setLoading] = useState(false);
 
@@ -42,7 +45,7 @@ export default function CreateTeamPage() {
       yearsList.push(year);
     }
     return yearsList;
-  }, [])
+  }, []);
 
   const fetchSuggestions = async (input) => {
     if (input.length < 3) {
@@ -50,17 +53,57 @@ export default function CreateTeamPage() {
       return;
     }
     try {
-      const response = await fetch(`/api/google-places?input=${encodeURIComponent(input)}`);
+      const response = await fetch(
+        `/api/google-places?input=${encodeURIComponent(input)}`
+      );
       const data = await response.json();
       if (response.ok) {
         setSuggestions(data.predictions);
         setShowSuggestions(true);
       }
     } catch (error) {
-      showToast('Erro ao buscar sugestões de endereço', 'error');
-      console.error('Erro ao buscar sugestões:', error);
+      showToast("Erro ao buscar sugestões de endereço", "error");
+      console.error("Erro ao buscar sugestões:", error);
     }
   };
+
+  useEffect(() => {
+    async function fetchTeamData() {
+      if (teamId) {
+        setLoading(true);
+        try {
+          const response = await fetch(`/api/team/${teamId}`);
+          if (!response.ok) {
+            throw new Error("Time não encontrado.");
+          }
+          const data = await response.json();
+          setName(data.name || "");
+          setSportId(data.sportId || "");
+          setCategoryId(data.categoryId || "");
+          setAbbreviation(data.abbreviation || "");
+          setFoundedAt(data.foundedAt || "");
+          setHistory(data.history || "");
+          setHasField(data.hasField || false);
+          setFieldName(data.fieldName || "");
+          setFieldAddress(data.fieldAddress || "");
+          setTeamAddress(data.teamAddress || "");
+          setLogo(data.logo || "");
+        } catch (error) {
+          showToast("Falha ao carregar os dados do time.", "error");
+          console.error("Falha ao carregar os dados do time:", error);
+          router.push("/dashboard");
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setLoading(false);
+      }
+    }
+
+    if (status === "authenticated") {
+      fetchTeamData();
+    }
+  }, [teamId, status]);
 
   useEffect(() => {
     if (sportId) {
@@ -72,53 +115,55 @@ export default function CreateTeamPage() {
             setAvailableCategories(data.categories);
           }
         } catch (error) {
-          showToast('Falha ao carregar categorias', 'error');
-          console.error('Falha ao carregar categorias:', error);
+          showToast("Falha ao carregar categorias", "error");
+          console.error("Falha ao carregar categorias:", error);
         }
       }
       fetchCategories();
     } else {
       setAvailableCategories([]); // Limpa as categorias se nenhum esporte for selecionado
-      setCategoryId(''); // Reseta a categoria
+      setCategoryId(""); // Reseta a categoria
     }
   }, [sportId]);
 
   useEffect(() => {
     async function fetchSports() {
       try {
-        const response = await fetch('/api/sports');
+        const response = await fetch("/api/sports");
         const data = await response.json();
         if (response.ok) {
           setAvailableSports(data.sports);
         }
       } catch (error) {
-        showToast('Falha ao carregar esportes', 'error');
-        console.error('Falha ao carregar esportes:', error);
+        showToast("Falha ao carregar esportes", "error");
+        console.error("Falha ao carregar esportes:", error);
       }
     }
     fetchSports();
   }, []);
 
-  if (status === 'unauthenticated') {
-    router.push('/login');
+  if (status === "unauthenticated") {
+    router.push("/login");
     return null;
   }
 
   const fetchAddressDetails = async (placeId: string) => {
     try {
-      const response = await fetch(`/api/google-places/details?placeId=${placeId}`);
+      const response = await fetch(
+        `/api/google-places/details?placeId=${placeId}`
+      );
       const data = await response.json();
       if (response.ok) {
         const location = data.result.geometry.location;
         setLatitude(location.lat);
         setLongitude(location.lng);
       } else {
-        showToast('Erro ao buscar detalhes do endereço', 'error');
-        console.error('Erro ao buscar detalhes:', data.error);
+        showToast("Erro ao buscar detalhes do endereço", "error");
+        console.error("Erro ao buscar detalhes:", data.error);
       }
     } catch (error) {
-      showToast('Erro ao buscar detalhes do endereço', 'error');
-      console.error('Erro ao buscar detalhes:', error);
+      showToast("Erro ao buscar detalhes do endereço", "error");
+      console.error("Erro ao buscar detalhes:", error);
     }
   };
 
@@ -127,20 +172,20 @@ export default function CreateTeamPage() {
       return null;
     }
     const formData = new FormData();
-    formData.append('logo', logoFile);
+    formData.append("logo", logoFile);
 
     try {
-      const response = await fetch('/api/upload-logo', {
-        method: 'POST',
+      const response = await fetch("/api/upload-logo", {
+        method: "POST",
         body: formData,
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || 'Erro no upload da logo.');
+        throw new Error(data.error || "Erro no upload da logo.");
       }
       return data.url;
     } catch (err: any) {
-      showToast('Erro ao fazer upload da logo', 'error');
+      showToast("Erro ao fazer upload da logo", "error");
       return null;
     }
   };
@@ -152,71 +197,103 @@ export default function CreateTeamPage() {
     const logoUrl = await handleFileUpload();
 
     if (logoFile && !logoUrl) {
-      showToast('Erro ao fazer upload da logo, tente novamente', 'error');
+      showToast("Erro ao fazer upload da logo, tente novamente", "error");
       setLoading(false);
       return;
     }
 
     if (hasField && (!fieldName || !fieldAddress)) {
-      showToast('O nome e o endereço do campo são obrigatórios se você for tiver campo.', 'error');
+      showToast("O nome e o endereço do campo são obrigatórios.", "error");
       setLoading(false);
       return;
     }
 
     if (!hasField && !teamAddress) {
-      showToast('O endereço do time é obrigatório.', 'error');
+      showToast("O endereço do time é obrigatório.", "error");
       setLoading(false);
       return;
     }
 
     try {
-      const response = await fetch('/api/team/create', {
-        method: 'POST',
+      const addressToUse = hasField ? fieldAddress : teamAddress;
+      const geoCoords = await fetchAddressDetails(addressToUse);
+      if (!geoCoords) {
+        showToast(
+          "Não foi possível obter as coordenadas para o endereço.",
+          "error"
+        );
+        setLoading(false);
+        return;
+      }
+
+      const payload = {
+        name,
+        sportId,
+        abbreviation,
+        logo: logoUrl,
+        foundedAt,
+        history,
+        hasField,
+        fieldName,
+        fieldAddress: hasField ? fieldAddress : null,
+        teamAddress: !hasField ? teamAddress : null,
+        latitude: geoCoords.latitude,
+        longitude: geoCoords.longitude,
+        categoryId,
+      };
+
+      const isEditing = !!teamId;
+      const apiUrl = isEditing
+        ? `/api/team/update/${teamId}`
+        : "/api/team/create";
+      const method = isEditing ? "PUT" : "POST";
+
+      const response = await fetch(apiUrl, {
+        method: method,
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          name,
-          sportId,
-          abbreviation,
-          logo: logoUrl,
-          foundedAt,
-          history,
-          hasField,
-          fieldName,
-          fieldAddress,
-          categoryId,
-          latitude,
-          longitude
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        showToast(data.error || 'Erro ao criar o time.', 'error');
+        showToast(
+          data.error || `Erro ao ${isEditing ? "atualizar" : "criar"} o time.`,
+          "error"
+        );
         return;
       }
 
-      showToast('Time criado com sucesso', 'success');
+      showToast(
+        `Time ${isEditing ? "atualizado" : "criado"} com sucesso!`,
+        "success"
+      );
       setLogoPreviewUrl(null);
-
-
-      router.push('/dashboard');
-
+      router.push("/dashboard");
     } catch (err) {
-      console.log('Erro ao criar time', err);
-
-      showToast('Erro ao criar time', 'error');
+      console.log(`Erro ao ${teamId ? "atualizar" : "criar"} time`, err);
+      showToast(`Erro ao ${teamId ? "atualizar" : "criar"} time`, "error");
     } finally {
       setLoading(false);
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p>Carregando...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-gray-100 mb-12">
       <div className="bg-white p-8 rounded-lg shadow-lg w-full">
-        <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">Criar Novo Time</h2>
+        <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">
+          Criar Novo Time
+        </h2>
         <p className="text-center text-gray-600 mb-8">
           Preencha as informações do seu time.
         </p>
@@ -225,7 +302,10 @@ export default function CreateTeamPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Nome do Time */}
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="name"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Nome do Time
               </label>
               <input
@@ -238,7 +318,10 @@ export default function CreateTeamPage() {
               />
             </div>
             <div>
-              <label htmlFor="abbreviation" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="abbreviation"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Abreviatura (Máx. 20 caracteres)
               </label>
               <input
@@ -252,7 +335,10 @@ export default function CreateTeamPage() {
             </div>
             <div>
               {/* Esporte */}
-              <label htmlFor="sportId" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="sportId"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Esporte
               </label>
               <select
@@ -272,7 +358,10 @@ export default function CreateTeamPage() {
             </div>
             {sportId && availableCategories.length > 0 && (
               <div>
-                <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="categoryId"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Categoria
                 </label>
                 <select
@@ -293,10 +382,12 @@ export default function CreateTeamPage() {
               </div>
             )}
 
-
             {/* Ano de Fundação */}
             <div>
-              <label htmlFor="foundedAt" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="foundedAt"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Ano de Fundação
               </label>
               <select
@@ -313,8 +404,11 @@ export default function CreateTeamPage() {
                 ))}
               </select>
             </div>
-            <div className='col-span-full'>
-              <label htmlFor="logo" className="block text-sm font-medium text-gray-700">
+            <div className="col-span-full">
+              <label
+                htmlFor="logo"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Logo do Time (Opcional)
               </label>
               <input
@@ -342,13 +436,20 @@ export default function CreateTeamPage() {
             </div>
             {logoPreviewUrl && (
               <div className="mt-4 flex justify-center">
-                <img src={logoPreviewUrl} alt="Pré-visualização da Logo" className="h-32 w-32 object-contain rounded-md border border-gray-300" />
+                <img
+                  src={logoPreviewUrl}
+                  alt="Pré-visualização da Logo"
+                  className="h-32 w-32 object-contain rounded-md border border-gray-300"
+                />
               </div>
             )}
 
             {/* História do Time */}
-            <div className='col-span-full'>
-              <label htmlFor="history" className="block text-sm font-medium text-gray-700">
+            <div className="col-span-full">
+              <label
+                htmlFor="history"
+                className="block text-sm font-medium text-gray-700"
+              >
                 História (Opcional)
               </label>
               <textarea
@@ -369,14 +470,19 @@ export default function CreateTeamPage() {
                 onChange={(e) => setHasField(e.target.checked)}
                 className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <label htmlFor="hasField" className="ml-2 block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="hasField"
+                className="ml-2 block text-sm font-medium text-gray-700"
+              >
                 O time tem campo próprio?
               </label>
             </div>
 
-
-            <div className='col-span-full'>
-              <label htmlFor="teamAddress" className="block text-sm font-medium text-gray-700">
+            <div className="col-span-full">
+              <label
+                htmlFor="teamAddress"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Endereço do Campo
               </label>
               <input
@@ -409,7 +515,6 @@ export default function CreateTeamPage() {
                         setShowSuggestions(false);
                         fetchAddressDetails(s.place_id);
                       }}
-
                       className="p-2 hover:bg-gray-100 cursor-pointer"
                     >
                       {s.description}
@@ -423,7 +528,10 @@ export default function CreateTeamPage() {
             {hasField && (
               <>
                 <div>
-                  <label htmlFor="fieldName" className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="fieldName"
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Nome do Campo
                   </label>
                   <input
@@ -436,7 +544,10 @@ export default function CreateTeamPage() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="fieldAddress" className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="fieldAddress"
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Endereço do Campo
                   </label>
                   {/* <input
@@ -477,7 +588,6 @@ export default function CreateTeamPage() {
                             setShowSuggestions(false);
                             fetchAddressDetails(s.place_id);
                           }}
-
                           className="p-2 hover:bg-gray-100 cursor-pointer"
                         >
                           {s.description}
@@ -488,18 +598,20 @@ export default function CreateTeamPage() {
                 </div>
               </>
             )}
-
           </div>
           <button
             type="submit"
             disabled={loading}
-            className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
-              }`}
+            className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+              loading
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            }`}
           >
-            {loading ? 'Criando...' : 'Criar Time'}
+            {loading ? "Criando..." : "Criar Time"}
           </button>
         </form>
-      </div >
-    </div >
+      </div>
+    </div>
   );
 }

@@ -23,9 +23,12 @@ export async function POST(request: Request) {
       logo,
       sportId,
       foundedAt,
+      latitude,
+      longitude,
       history,
       hasField,
       fieldName,
+      categoryId,
       fieldAddress,
     } = await request.json();
 
@@ -73,6 +76,9 @@ export async function POST(request: Request) {
         abbreviation,
         logo,
         sportId,
+        latitude,
+        longitude,
+        categoryId,
         ownerId: loggedInUser.id,
         foundedAt,
         history,

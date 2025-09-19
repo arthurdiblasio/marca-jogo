@@ -58,6 +58,8 @@ model Team {
   logo         String?
   foundedAt    String?
   history      String?
+  latitude     Float?
+  longitude    Float?
   hasField     Boolean  @default(false)
   fieldName    String?
   fieldAddress String?

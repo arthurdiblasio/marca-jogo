@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 export default function LoginPage() {
@@ -11,14 +11,12 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const pathname = useSearchParams();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-
-    console.log('Attempting to log in with:', { email, password });
-
 
     const result = await signIn('credentials', {
       redirect: false,
@@ -26,13 +24,12 @@ export default function LoginPage() {
       password,
     });
 
-    console.log('Login result:', result);
-
+    const urlGoTo = pathname.get('callbackUrl') || '/';
 
     if (result?.error) {
       setError(result.error);
     } else {
-      router.push('/'); // Redireciona para o painel
+      router.push(urlGoTo);
     }
 
     setLoading(false);
