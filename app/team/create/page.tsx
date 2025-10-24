@@ -145,6 +145,25 @@ export default function CreateTeamPage() {
     }
   };
 
+  const handleAddressTypeChange = (type: 'field' | 'team') => {
+    setAddressType(type);
+    const isField = type === 'field';
+    setHasField(isField);
+
+    // Limpar estados:
+    setLatitude(null);
+    setLongitude(null);
+    setSuggestions([]);
+    setShowSuggestions(false);
+
+    if (isField) {
+      setTeamAddress('');
+    } else {
+      setFieldName('');
+      setFieldAddress('');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -185,6 +204,7 @@ export default function CreateTeamPage() {
           hasField,
           fieldName,
           fieldAddress,
+          fullAddress: teamAddress || fieldAddress,
           categoryId,
           latitude,
           longitude
@@ -370,12 +390,12 @@ export default function CreateTeamPage() {
                 className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
               <label htmlFor="hasField" className="ml-2 block text-sm font-medium text-gray-700">
-                O time tem campo próprio?
+                Seu time joga como mandante?
               </label>
             </div>
 
 
-            <div className='col-span-full'>
+            {/* <div className='col-span-full'>
               <label htmlFor="teamAddress" className="block text-sm font-medium text-gray-700">
                 Endereço do Campo
               </label>
@@ -417,7 +437,7 @@ export default function CreateTeamPage() {
                   ))}
                 </ul>
               )}
-            </div>
+            </div> */}
 
             {/* Campos do Campo (Exibidos condicionalmente) */}
             {hasField && (
