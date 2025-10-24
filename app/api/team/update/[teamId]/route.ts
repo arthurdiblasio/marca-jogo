@@ -8,7 +8,7 @@ export async function PUT(
   { params }: { params: { teamId: string } }
 ) {
   try {
-    const teamId = params.teamId;
+    const { teamId } = await params;
     const body = await request.json();
 
     const {
@@ -26,7 +26,6 @@ export async function PUT(
       categoryId,
     } = body;
 
-    // Verifique se o ID do time é válido
     if (!teamId) {
       return NextResponse.json(
         { error: "ID do time não fornecido." },
@@ -34,7 +33,6 @@ export async function PUT(
       );
     }
 
-    // Verifique se o time existe
     const existingTeam = await prisma.team.findUnique({
       where: {
         id: teamId,
@@ -48,7 +46,6 @@ export async function PUT(
       );
     }
 
-    // Atualize o registro do time no banco de dados
     const updatedTeam = await prisma.team.update({
       where: {
         id: teamId,

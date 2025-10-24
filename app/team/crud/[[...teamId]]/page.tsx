@@ -4,9 +4,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react"; // Para checar a sessão do usuário
+import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { showToast } from "@/hooks/useToast"; // 👈 Importe o hook
+import { showToast } from "@/hooks/useToast";
 
 export default function TeamFormPage() {
   const { data: session, status } = useSession();
@@ -216,15 +216,14 @@ export default function TeamFormPage() {
 
     try {
       const addressToUse = hasField ? fieldAddress : teamAddress;
-      const geoCoords = await fetchAddressDetails(addressToUse);
-      if (!geoCoords) {
+      await fetchAddressDetails(addressToUse).catch(() => {
         showToast(
           "Não foi possível obter as coordenadas para o endereço.",
           "error"
         );
         setLoading(false);
         return;
-      }
+      });
 
       const payload = {
         name,
@@ -237,12 +236,14 @@ export default function TeamFormPage() {
         fieldName,
         fieldAddress: hasField ? fieldAddress : null,
         teamAddress: !hasField ? teamAddress : null,
-        latitude: geoCoords.latitude,
-        longitude: geoCoords.longitude,
+        latitude,
+        longitude,
         categoryId,
       };
 
       const isEditing = !!teamId;
+      console.log("Payload do time Editando:", isEditing);
+
       const apiUrl = isEditing
         ? `/api/team/update/${teamId}`
         : "/api/team/create";
@@ -602,11 +603,10 @@ export default function TeamFormPage() {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-              loading
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            }`}
+            className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${loading
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              }`}
           >
             {loading ? "Criando..." : "Criar Time"}
           </button>
