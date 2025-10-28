@@ -13,7 +13,7 @@ interface Category {
 
 export const useSportsCategories = () => {
   const [sportId, setSportId] = useState("");
-  const [categoryId, setCategoryId] = useState(null);
+  const [categoryId, setCategoryId] = useState(null as string | null);
   const [availableSports, setAvailableSports] = useState<Sport[]>([]);
   const [availableCategories, setAvailableCategories] = useState<Category[]>(
     []

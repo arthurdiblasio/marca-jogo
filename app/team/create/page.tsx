@@ -7,7 +7,8 @@ import { useCreateTeamForm } from '@/app/team/create/hooks/useCreateTeamForm'; /
 import { AddressSelection } from '@/components/forms/AddressSelection'; // Novo componente
 import { FieldImagesUpload } from '@/components/forms/FieldImagesUpload'; // Novo componente
 import { RadioButtons } from '@/components/forms/RadioButtons';
-
+import { FormInput } from '@/components/forms/FormInput'; // <-- NOVA IMPORTAÇÃO
+import { FormTextArea } from '@/components/forms/FormTextArea';
 
 export default function CreateTeamPage() {
   const { status } = useSession();
@@ -53,14 +54,22 @@ export default function CreateTeamPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Campos básicos do Time */}
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">Nome do Time</label>
-              <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
-            </div>
-            <div>
-              <label htmlFor="abbreviation" className="block text-sm font-medium text-gray-700">Abreviatura (Máx. 20 caracteres)</label>
-              <input id="abbreviation" type="text" value={abbreviation} onChange={(e) => setAbbreviation(e.target.value)} maxLength={20} className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
-            </div>
+            <FormInput
+              id="name"
+              label="Nome do Time"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+            <FormInput
+              id="abreviation"
+              label="Abreviatura (Máx. 20 caracteres)"
+              type="text"
+              value={abbreviation}
+              onChange={(e) => setAbbreviation(e.target.value)}
+              required
+            />
             {/* Seleção de Esporte e Categoria */}
             <div>
               <label htmlFor="sportId" className="block text-sm font-medium text-gray-700">Esporte</label>
@@ -103,6 +112,7 @@ export default function CreateTeamPage() {
               <label htmlFor="history" className="block text-sm font-medium text-gray-700">História (Opcional)</label>
               <textarea id="history" value={history} onChange={(e) => setHistory(e.target.value)} rows={4} className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
             </div>
+            <FormTextArea id='history' label='História (Opcional)' />
 
             {/* Seleção do Tipo de Endereço */}
             <div className="col-span-full border-t pt-6">
