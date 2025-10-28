@@ -357,7 +357,7 @@ export default function TeamFormPage() {
                 ))}
               </select>
             </div>
-            {sportId && availableCategories.length > 0 && (
+            {sportId && availableCategories?.length > 0 && (
               <div>
                 <label
                   htmlFor="categoryId"

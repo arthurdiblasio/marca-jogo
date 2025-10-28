@@ -50,7 +50,7 @@ export default function RootLayout({ children }) {
               {children}
             </main>
           </div>
-          <Toaster position="top-center" reverseOrder={false} />
+          <Toaster position="bottom-right" reverseOrder={false} />
         </SessionProvider>
       </body>
     </html>
