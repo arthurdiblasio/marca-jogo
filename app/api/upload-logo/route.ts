@@ -14,31 +14,61 @@ cloudinary.config({
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
-    const file = formData.get("logo") as File | null;
+    // const files = formData.get("files");
 
-    if (!file) {
+    const files = formData.getAll("files") as File[];
+
+    if (!files || files.length === 0) {
       return NextResponse.json(
         { error: "Nenhum arquivo enviado." },
         { status: 400 }
       );
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const passthrough = new PassThrough();
-    passthrough.end(buffer);
+    // const urls = [];
 
-    const uploadResult = await new Promise((resolve, reject) => {
-      cloudinary.uploader
-        .upload_stream({ folder: "team-logos" }, (error, result) => {
-          if (error) return reject(error);
-          resolve(result);
-        })
-        .end(buffer);
-    });
+    // for (const file of files) {
+    // const buffer = Buffer.from(await files.arrayBuffer());
+    // const passthrough = new PassThrough();
+    // passthrough.end(buffer);
 
-    const url = uploadResult.secure_url;
+    // const uploadResult = await new Promise((resolve, reject) => {
+    //   cloudinary.uploader
+    //     .upload_stream({ folder: "team-logos" }, (error, result) => {
+    //       if (error) return reject(error);
+    //       resolve(result);
+    //     })
+    //     .end(buffer);
+    // });
 
-    return NextResponse.json({ url }, { status: 200 });
+    // urls.push(uploadResult.secure_url);
+    // }
+
+    const uploadResults = await Promise.all(
+      files.map(async (file) => {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const passthrough = new PassThrough();
+        passthrough.end(buffer);
+
+        const result = await new Promise((resolve, reject) => {
+          cloudinary.uploader
+            .upload_stream({ folder: "team-logos" }, (error, result) => {
+              if (error) return reject(error);
+              resolve(result);
+            })
+            .end(buffer);
+        });
+
+        return result;
+      })
+    );
+
+    console.log("urls =>>>", uploadResults);
+
+    return NextResponse.json(
+      { urls: uploadResults.map((res) => res.secure_url) },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Erro no upload:", error);
     return NextResponse.json(

@@ -27,9 +27,9 @@ export async function POST(request: Request) {
       longitude,
       history,
       hasField,
-      fieldName,
       categoryId,
-      fieldAddress,
+      fieldInfo,
+      fullAddress,
     } = await request.json();
 
     const loggedInUser = await prisma.user.findUnique({
@@ -43,7 +43,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // 1. Validação dos dados
     if (!name || !sportId) {
       return NextResponse.json(
         { error: "Nome e esporte são obrigatórios." },
@@ -51,7 +50,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Verifique se o usuário já tem um time com o mesmo nome e esporte
     const existingTeam = await prisma.team.findUnique({
       where: {
         ownerId_name_sportId: {
@@ -69,7 +67,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Crie o novo time no banco de dados
     const newTeam = await prisma.team.create({
       data: {
         name,
@@ -83,8 +80,8 @@ export async function POST(request: Request) {
         foundedAt,
         history,
         hasField,
-        fieldName,
-        fieldAddress,
+        fieldInfo,
+        fullAddress,
       },
     });
 
