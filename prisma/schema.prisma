@@ -61,9 +61,8 @@ model Team {
   latitude     Float?
   longitude    Float?
   hasField     Boolean  @default(false)
-  fieldName    String?
-  fieldAddress String?
   fullAddress  String?
+  fieldInfo    Json?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

@@ -489,6 +489,7 @@ export default function CreateTeamPage() {
                     value={fieldAddress}
                     onChange={(e) => {
                       setFieldAddress(e.target.value);
+                      setTeamAddress(e.target.value);
                       fetchSuggestions(e.target.value);
                     }}
                     onBlur={() => setShowSuggestions(false)}
@@ -509,6 +510,7 @@ export default function CreateTeamPage() {
                           onMouseDown={(e) => {
                             e.preventDefault(); // Impede que o onBlur do input seja acionado
                             setFieldAddress(s.description);
+                            setTeamAddress(s.description);
                             setSuggestions([]);
                             setShowSuggestions(false);
                             fetchAddressDetails(s.place_id);
@@ -528,23 +530,23 @@ export default function CreateTeamPage() {
             {addressType === 'team' && (
               <>
                 <div>
-                  <label htmlFor="fieldAddress" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="teamAddress" className="block text-sm font-medium text-gray-700">
                     Endereço do Time (de onde time é)
                   </label>
                   {/* <input
-                  id="fieldAddress"
+                  id="teamAddress"
                   type="text"
-                  value={fieldAddress}
-                  onChange={(e) => setFieldAddress(e.target.value)}
+                  value={teamAddress}
+                  onChange={(e) => setteamAddress(e.target.value)}
                   required={hasField}
                   className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 /> */}
                   <input
-                    id="fieldAddress"
+                    id="teamAddress"
                     type="text"
-                    value={fieldAddress}
+                    value={teamAddress}
                     onChange={(e) => {
-                      setFieldAddress(e.target.value);
+                      setTeamAddress(e.target.value);
                       fetchSuggestions(e.target.value);
                     }}
                     onBlur={() => setShowSuggestions(false)}
@@ -564,7 +566,7 @@ export default function CreateTeamPage() {
                           // }}
                           onMouseDown={(e) => {
                             e.preventDefault(); // Impede que o onBlur do input seja acionado
-                            setFieldAddress(s.description);
+                            setTeamAddress(s.description);
                             setSuggestions([]);
                             setShowSuggestions(false);
                             fetchAddressDetails(s.place_id);
