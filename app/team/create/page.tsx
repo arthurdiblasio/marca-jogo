@@ -26,6 +26,7 @@ export default function CreateTeamPage() {
   const [fieldName, setFieldName] = useState('');
   const [fieldAddress, setFieldAddress] = useState('');
   const [logo, setLogo] = useState('');
+  const [addressType, setAddressType] = useState<'field' | 'team'>('field');
   const [abbreviation, setAbbreviation] = useState('');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
@@ -381,17 +382,32 @@ export default function CreateTeamPage() {
             </div>
 
             {/* Tem Campo Próprio? */}
-            <div className="flex items-center col-span-full">
-              <input
-                id="hasField"
-                type="checkbox"
-                checked={hasField}
-                onChange={(e) => setHasField(e.target.checked)}
-                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <label htmlFor="hasField" className="ml-2 block text-sm font-medium text-gray-700">
-                Seu time joga como mandante?
+            <div className="col-span-full">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Escolha uma das opções abaixo:
               </label>
+              <div className="flex space-x-4">
+                <button
+                  type="button"
+                  onClick={() => handleAddressTypeChange('field')}
+                  className={`py-2 px-4 rounded-md shadow-sm text-sm font-medium transition-colors ${addressType === 'field'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-blue-50'
+                    }`}
+                >
+                  Meu time joga como mandante (Campo onde sedia os jogos)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAddressTypeChange('team')}
+                  className={`py-2 px-4 rounded-md shadow-sm text-sm font-medium transition-colors ${addressType === 'team'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-blue-50'
+                    }`}
+                >
+                  Meu time não tem campo (Sou somente visitante)
+                </button>
+              </div>
             </div>
 
 
@@ -440,7 +456,7 @@ export default function CreateTeamPage() {
             </div> */}
 
             {/* Campos do Campo (Exibidos condicionalmente) */}
-            {hasField && (
+            {addressType === 'field' && (
               <>
                 <div>
                   <label htmlFor="fieldName" className="block text-sm font-medium text-gray-700">
@@ -458,6 +474,62 @@ export default function CreateTeamPage() {
                 <div>
                   <label htmlFor="fieldAddress" className="block text-sm font-medium text-gray-700">
                     Endereço do Campo
+                  </label>
+                  {/* <input
+                  id="fieldAddress"
+                  type="text"
+                  value={fieldAddress}
+                  onChange={(e) => setFieldAddress(e.target.value)}
+                  required={hasField}
+                  className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                /> */}
+                  <input
+                    id="fieldAddress"
+                    type="text"
+                    value={fieldAddress}
+                    onChange={(e) => {
+                      setFieldAddress(e.target.value);
+                      fetchSuggestions(e.target.value);
+                    }}
+                    onBlur={() => setShowSuggestions(false)}
+                    onFocus={() => setShowSuggestions(true)}
+                    required={hasField}
+                    className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  {showSuggestions && suggestions.length > 0 && (
+                    <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1">
+                      {suggestions.map((s) => (
+                        <li
+                          key={s.place_id}
+                          // onClick={() => {
+                          //   setFieldAddress(s.description);
+                          //   setSuggestions([]);
+                          //   setShowSuggestions(false);
+                          // }}
+                          onMouseDown={(e) => {
+                            e.preventDefault(); // Impede que o onBlur do input seja acionado
+                            setFieldAddress(s.description);
+                            setSuggestions([]);
+                            setShowSuggestions(false);
+                            fetchAddressDetails(s.place_id);
+                          }}
+
+                          className="p-2 hover:bg-gray-100 cursor-pointer"
+                        >
+                          {s.description}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </>
+            )}
+
+            {addressType === 'team' && (
+              <>
+                <div>
+                  <label htmlFor="fieldAddress" className="block text-sm font-medium text-gray-700">
+                    Endereço do Time (de onde time é)
                   </label>
                   {/* <input
                   id="fieldAddress"
