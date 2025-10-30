@@ -1,24 +1,21 @@
-// src/hooks/useSportsCategories.ts
 import { useState, useEffect } from "react";
 import { showToast } from "@/hooks/useToast";
-import { Category, Sport } from "@prisma/client";
+import { FieldSurfaceTypes } from "@prisma/client";
 
-export const useSportsCategories = () => {
-  const [sportId, setSportId] = useState("");
-  const [categoryId, setCategoryId] = useState(null as string | null);
-  const [availableSports, setAvailableSports] = useState<Sport[]>([]);
-  const [availableCategories, setAvailableCategories] = useState<Category[]>(
-    []
-  );
+export const useFieldSurfaceTypes = () => {
+  const [fieldSurfaceTypeId, setSportId] = useState("");
+  const [availableFieldTypes, setAvailableFieldTypes] = useState<
+    FieldSurfaceTypes[]
+  >([]);
 
   // Efeito para buscar todos os esportes na montagem
   useEffect(() => {
     async function fetchSports() {
       try {
-        const response = await fetch("/api/sports");
+        const response = await fetch("/api/field-types");
         const data = await response.json();
         if (response.ok) {
-          setAvailableSports(data.sports);
+          setAvailableFieldTypes(data.sports);
         }
       } catch (error) {
         showToast("Falha ao carregar esportes", "error");
