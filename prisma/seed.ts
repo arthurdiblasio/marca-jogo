@@ -16,8 +16,28 @@ const categoriesSoccer = [
   "Jovem",
 ];
 
+const fieldSurfaceTypes = [
+  "Grama Natural",
+  "Grama Sintética",
+  "Terra",
+  "Cimento",
+  "Taco de Madeira",
+  "Areia",
+];
+
 async function main() {
   console.log("Iniciando o processo de seed...");
+
+  for (const surfaceTypeName of fieldSurfaceTypes) {
+    await prisma.fieldSurfaceTypes.upsert({
+      where: { name: surfaceTypeName },
+      update: {},
+      create: { name: surfaceTypeName },
+    });
+    console.log(
+      `Tipo de Superfície de Campo "${surfaceTypeName}" inserido ou atualizado.`
+    );
+  }
 
   for (const sportName of sports) {
     await prisma.sport.upsert({

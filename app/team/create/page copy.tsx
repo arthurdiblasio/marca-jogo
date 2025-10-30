@@ -373,7 +373,7 @@ export default function CreateTeamPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100 mb-12">
+    <div className="flex min-h-screen bg-red-100 mb-12">
       <div className="bg-white p-8 rounded-lg shadow-lg w-full">
         <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">Criar Novo Time</h2>
         <p className="text-center text-gray-600 mb-8">

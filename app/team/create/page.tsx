@@ -9,7 +9,7 @@ import { FieldImagesUpload } from '@/components/forms/FieldImagesUpload'; // Nov
 import { RadioButtons } from '@/components/forms/RadioButtons';
 import { FormInput } from '@/components/forms/FormInput'; // <-- NOVA IMPORTAÇÃO
 import { FormTextArea } from '@/components/forms/FormTextArea';
-
+import { FormSelect, SelectOption } from '@/components/forms/FormSelect'; // <-- NOVA IMPORTAÇÃO
 export default function CreateTeamPage() {
   const { status } = useSession();
   const router = useRouter();
@@ -47,7 +47,7 @@ export default function CreateTeamPage() {
 
   return (
     <div className="flex min-h-screen bg-gray-100 mb-12 justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-3xl m-4">
+      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-8xl m-4">
         <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">Criar Novo Time ⚽</h2>
         <p className="text-center text-gray-600 mb-8">Preencha as informações do seu time.</p>
 
@@ -108,11 +108,7 @@ export default function CreateTeamPage() {
             )}
 
             {/* História do Time */}
-            <div className='col-span-full'>
-              <label htmlFor="history" className="block text-sm font-medium text-gray-700">História (Opcional)</label>
-              <textarea id="history" value={history} onChange={(e) => setHistory(e.target.value)} rows={4} className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
-            </div>
-            <FormTextArea id='history' label='História (Opcional)' />
+            <FormTextArea id='history' label='História (Opcional)' value={history} onChange={(e) => setHistory(e.target.value)} rows={3} />
 
             {/* Seleção do Tipo de Endereço */}
             <div className="col-span-full border-t pt-6">
