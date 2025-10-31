@@ -3,58 +3,28 @@ import { showToast } from "@/hooks/useToast";
 import { FieldSurfaceTypes } from "@prisma/client";
 
 export const useFieldSurfaceTypes = () => {
-  const [fieldSurfaceTypeId, setSportId] = useState("");
   const [availableFieldTypes, setAvailableFieldTypes] = useState<
     FieldSurfaceTypes[]
   >([]);
 
   // Efeito para buscar todos os esportes na montagem
   useEffect(() => {
-    async function fetchSports() {
+    async function fetchFieldTypes() {
       try {
         const response = await fetch("/api/field-types");
         const data = await response.json();
         if (response.ok) {
-          setAvailableFieldTypes(data.sports);
+          setAvailableFieldTypes(data.fieldSurfaceTypes);
         }
       } catch (error) {
-        showToast("Falha ao carregar esportes", "error");
+        showToast("Falha ao carregar tipos de pisos", "error");
       }
     }
-    fetchSports();
+    fetchFieldTypes();
   }, []);
 
-  // Efeito para buscar categorias quando sportId muda
-  useEffect(() => {
-    if (sportId) {
-      async function fetchCategories() {
-        try {
-          const response = await fetch(`/api/categories?sportId=${sportId}`);
-          const data = await response.json();
-          if (response.ok) {
-            console.log("Categorias carregadas:", data.categories);
-
-            setAvailableCategories(
-              data.categories.length ? data.categories : null
-            );
-          }
-        } catch (error) {
-          showToast("Falha ao carregar categorias", "error");
-        }
-      }
-      fetchCategories();
-    } else {
-      setAvailableCategories([]);
-      setCategoryId(null);
-    }
-  }, [sportId]);
-
   return {
-    sportId,
-    setSportId,
-    categoryId,
-    setCategoryId,
-    availableSports,
-    availableCategories,
+    availableFieldTypes,
+    setAvailableFieldTypes,
   };
 };

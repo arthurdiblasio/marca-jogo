@@ -5,6 +5,8 @@ import { showToast } from "@/hooks/useToast";
 import { useSportsCategories } from "./useSportsCategories";
 import { useGooglePlaces } from "../../../../hooks/useGooglePlaces";
 import { useImageUpload } from "../../../../hooks/useImageUpload";
+import { useFieldSurfaceTypes } from "@/hooks/useFieldSurfaceTypes";
+import { set } from "zod";
 
 export const useCreateTeamForm = () => {
   const router = useRouter();
@@ -16,6 +18,9 @@ export const useCreateTeamForm = () => {
     availableSports,
     availableCategories,
   } = useSportsCategories();
+
+  const { availableFieldTypes, setAvailableFieldTypes } =
+    useFieldSurfaceTypes();
 
   // Hook para a Logo (apenas 1 arquivo)
   const {
@@ -45,6 +50,7 @@ export const useCreateTeamForm = () => {
   const [abbreviation, setAbbreviation] = useState("");
   const [foundedAt, setFoundedAt] = useState("");
   const [history, setHistory] = useState("");
+  const [instagram, setInstagram] = useState("");
 
   // Tipo de Endereço e Lógica de Endereço
   const [addressType, setAddressType] = useState<"field" | "team">("team");
@@ -82,8 +88,8 @@ export const useCreateTeamForm = () => {
     setFieldName("");
     setFloorType("");
     setHasLockerRoom("no");
-    setHasDrinkingFountain("");
-    setHasGrandstand("");
+    setHasDrinkingFountain("no");
+    setHasGrandstand("no");
     setFieldObs("");
     resetFieldImageFiles();
   };
@@ -221,6 +227,8 @@ export const useCreateTeamForm = () => {
     fieldObs,
     setFieldObs,
     addressType,
+    instagram,
+    setInstagram,
 
     // Hooks de Esporte/Categoria
     sportId,
@@ -229,6 +237,10 @@ export const useCreateTeamForm = () => {
     setCategoryId,
     availableSports,
     availableCategories,
+
+    // Hook de Tipo de Piso
+    availableFieldTypes,
+    setAvailableFieldTypes,
 
     // Hook de Logo
     logoFile,

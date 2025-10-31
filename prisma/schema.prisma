@@ -58,7 +58,8 @@ model Team {
   logo         String?
   foundedAt    String?
   history      String?
-  url          String?
+  instagram    String?
+  photos       String[]
   city         String?
   state        String?
   neighborhood String?

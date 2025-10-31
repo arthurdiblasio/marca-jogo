@@ -1,42 +1,42 @@
-// src/app/create-team/page.tsx (ou src/pages/create-team.tsx)
+
 'use client';
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useCreateTeamForm } from '@/app/team/create/hooks/useCreateTeamForm'; // Importa o hook principal
-import { AddressSelection } from '@/components/forms/AddressSelection'; // Novo componente
-import { FieldImagesUpload } from '@/components/forms/FieldImagesUpload'; // Novo componente
+import { useCreateTeamForm } from '@/app/team/create/hooks/useCreateTeamForm';
+import { AddressSelection } from '@/components/forms/AddressSelection';
+import { FieldImagesUpload } from '@/components/forms/FieldImagesUpload';
 import { RadioButtons } from '@/components/forms/RadioButtons';
-import { FormInput } from '@/components/forms/FormInput'; // <-- NOVA IMPORTAÇÃO
+import { FormInput } from '@/components/forms/FormInput';
 import { FormTextArea } from '@/components/forms/FormTextArea';
-import { FormSelect, SelectOption } from '@/components/forms/FormSelect'; // <-- NOVA IMPORTAÇÃO
+import { FormSelect } from '@/components/forms/FormSelect';
+import { Camera, Icon } from 'lucide-react';
+import { FaBeer } from 'react-icons/fa';
+import { ImageMultiUpload } from '@/components/forms/ImageMultiUpload';
+
 export default function CreateTeamPage() {
   const { status } = useSession();
   const router = useRouter();
+
   const {
-    // Estados do Time
     name, setName, abbreviation, setAbbreviation, foundedAt, setFoundedAt, history, setHistory,
-    // Estados de Esporte/Categoria
     sportId, setSportId, categoryId, setCategoryId, availableSports, availableCategories,
-    // Estados do Campo
     fieldName, setFieldName, floorType, setFloorType, hasLockerRoom, setHasLockerRoom,
+    availableFieldTypes, instagram, setInstagram,
     hasDrinkingFountain, setHasDrinkingFountain, hasGrandstand, setHasGrandstand, fieldObs, setFieldObs,
-    // Endereço e Tipo
     addressType, isFieldAddress, teamLocation, fieldLocation, handleAddressTypeChange,
-    // Uploads
     logoPreviewUrl, addLogoFile, fieldImagePreviewUrls, addFieldImageFiles, removeFieldImage,
-    // Utilitários e Funções
     years, loading, handleSubmit
   } = useCreateTeamForm();
 
-  // Redirecionamento de autenticação
+
   if (status === 'loading') return null;
   if (status === 'unauthenticated') {
     router.push('/login');
     return null;
   }
 
-  // Handlers simplificados para upload (apenas chamam o hook)
+
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       addLogoFile([e.target.files[0]]);
@@ -48,7 +48,9 @@ export default function CreateTeamPage() {
   return (
     <div className="flex min-h-screen bg-gray-100 mb-12 justify-center">
       <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-8xl m-4">
-        <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">Criar Novo Time ⚽</h2>
+        <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">
+          Criar Novo Time
+        </h2>
         <p className="text-center text-gray-600 mb-8">Preencha as informações do seu time.</p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -70,31 +72,22 @@ export default function CreateTeamPage() {
               onChange={(e) => setAbbreviation(e.target.value)}
               required
             />
-            {/* Seleção de Esporte e Categoria */}
-            <div>
-              <label htmlFor="sportId" className="block text-sm font-medium text-gray-700">Esporte</label>
-              <select id="sportId" value={sportId} onChange={(e) => setSportId(e.target.value)} required className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                <option value="">Selecione um esporte</option>
-                {availableSports.map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}
-              </select>
-            </div>
+            <FormInput
+              id="instagram"
+              label="Instagram do Time (Opcional - ex: @meutime)"
+              type="text"
+              value={instagram}
+              onChange={(e) => setInstagram(e.target.value)}
+            />
+
+            <FormSelect id='sportId' value={sportId} required options={availableSports} onChange={(e) => setSportId(e.target.value)} label='Esporte' />
             {sportId && availableCategories?.length > 0 && (
-              <div>
-                <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700">Categoria</label>
-                <select id="categoryId" value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                  <option value="">Selecione uma categoria</option>
-                  {availableCategories.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
-                </select>
-              </div>
+              <FormSelect id='categoryId' value={categoryId || ''} required options={availableCategories} onChange={(e) => setCategoryId(e.target.value)} label='Categoria' />
             )}
             {/* Ano de Fundação */}
-            <div>
-              <label htmlFor="foundedAt" className="block text-sm font-medium text-gray-700">Ano de Fundação</label>
-              <select id="foundedAt" value={foundedAt} onChange={(e) => setFoundedAt(e.target.value)} className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                <option value="">Selecione um ano</option>
-                {years.map((year) => (<option key={year} value={year}>{year}</option>))}
-              </select>
-            </div>
+            <FormSelect id='foundedAt' required value={foundedAt} label='Ano de Fundação' options={years.map((year) => {
+              return { id: year.toString(), name: year.toString() }
+            })} onChange={(e) => setFoundedAt(e.target.value)} />
 
             {/* Logo do Time */}
             <div className='col-span-full'>
@@ -138,10 +131,15 @@ export default function CreateTeamPage() {
             {/* Campos do Campo (Mandante) */}
             {isFieldAddress && (
               <div className='col-span-full grid grid-cols-1 md:grid-cols-2 gap-6'>
-                <div>
-                  <label htmlFor="fieldName" className="block text-sm font-medium text-gray-700">Nome do campo/quadra</label>
-                  <input id="fieldName" type="text" value={fieldName} onChange={(e) => setFieldName(e.target.value)} required={isFieldAddress} className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
-                </div>
+
+                <FormInput
+                  id="fieldName"
+                  label="Nome do campo/quadra"
+                  type="text"
+                  value={fieldName}
+                  onChange={(e) => setFieldName(e.target.value)}
+                  required={isFieldAddress}
+                />
                 <div>
                   <AddressSelection
                     label="Endereço do campo/quadra"
@@ -151,18 +149,7 @@ export default function CreateTeamPage() {
                   />
                 </div>
 
-                {/* Tipo de piso */}
-                <div>
-                  <label htmlFor="floorType" className="block text-sm font-medium text-gray-700">Tipo de piso do campo/quadra</label>
-                  <select id="floorType" value={floorType} required={isFieldAddress} onChange={(e) => setFloorType(e.target.value)} className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                    <option value="">Selecione uma opção de piso</option>
-                    <option value='grama-natural'>Grama Natural</option>
-                    <option value='piso-sintetico'>Campo/Quadra Sintético</option>
-                    <option value='terra'>Terra</option>
-                    <option value='cimento'>Cimento</option>
-                    <option value='taco'>Taco de Madeira</option>
-                  </select>
-                </div>
+                <FormSelect label="Tipo de piso do campo/quadra" options={availableFieldTypes} value={floorType} onChange={(e) => setFloorType(e.target.value)} id="floorType" />
 
                 {/* Radio Buttons para o Campo */}
                 <RadioButtons label="O campo/quadra tem vestiário?" name="hasLockerRoom" value={hasLockerRoom} setter={setHasLockerRoom} options={[{ label: "Sim", value: "yes" }, { label: "Não", value: "no" }]} />
@@ -172,10 +159,14 @@ export default function CreateTeamPage() {
                 {/* Upload de Múltiplas Fotos do Campo */}
                 <FieldImagesUpload hook={{ previews: fieldImagePreviewUrls, addFiles: addFieldImageFiles, removeFile: removeFieldImage }} />
 
-                <div className='col-span-full'>
-                  <label htmlFor="fieldObs" className="block text-sm font-medium text-gray-700">Informações adicionais do campo/quadra (Opcional)</label>
-                  <textarea id="fieldObs" value={fieldObs} onChange={(e) => setFieldObs(e.target.value)} rows={4} className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
-                </div>
+                <ImageMultiUpload
+                  hook={fieldImagesHook} // Passa o hook do useCreateTeamForm
+                  id="fieldImages"
+                  label="Fotos do Campo/Quadra"
+                  maxFiles={5}
+                />
+
+                <FormTextArea id="fieldObs" label="Informações adicionais do campo/quadra (Opcional)" value={fieldObs} onChange={(e) => setFieldObs(e.target.value)} rows={4} />
               </div>
             )}
 

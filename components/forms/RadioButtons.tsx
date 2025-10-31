@@ -26,7 +26,7 @@ export const RadioButtons: React.FC<RadioButtonsProps> = ({ label, name, value, 
             name={name}
             value={option.value}
             checked={value === option.value}
-            onChange={(e) => setter(e.target.value)}
+            onChange={(e) => { setter(e.target.value); }}
             className="hidden"
           />
           {option.label}
