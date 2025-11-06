@@ -25,7 +25,7 @@ export default function CreateTeamPage() {
     availableFieldTypes, instagram, setInstagram,
     hasDrinkingFountain, setHasDrinkingFountain, hasGrandstand, setHasGrandstand, fieldObs, setFieldObs,
     addressType, isFieldAddress, teamLocation, fieldLocation, handleAddressTypeChange,
-    logoPreviewUrl, addLogoFile, fieldImagePreviewUrls, addFieldImageFiles, removeFieldImage,
+    logoPreviewUrl, addLogoFile, fieldImagesHook,
     years, loading, handleSubmit
   } = useCreateTeamForm();
 
@@ -157,7 +157,7 @@ export default function CreateTeamPage() {
                 <RadioButtons label="O campo/quadra tem arquibancada?" name="hasGrandstand" value={hasGrandstand} setter={setHasGrandstand} options={[{ label: "Sim", value: "yes" }, { label: "Não", value: "no" }]} />
 
                 {/* Upload de Múltiplas Fotos do Campo */}
-                <FieldImagesUpload hook={{ previews: fieldImagePreviewUrls, addFiles: addFieldImageFiles, removeFile: removeFieldImage }} />
+                {/* <FieldImagesUpload hook={{ previews: fieldImagePreviewUrls, addFiles: addFieldImageFiles, removeFile: removeFieldImage }} /> */}
 
                 <ImageMultiUpload
                   hook={fieldImagesHook} // Passa o hook do useCreateTeamForm

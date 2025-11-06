@@ -37,7 +37,7 @@ model User {
   id               String    @id @default(uuid())
   name             String
   email            String    @unique
-  password         String // 🔐 será armazenado com hash (bcrypt, argon2)
+  password         String
   phone            String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt

@@ -33,15 +33,13 @@ export const useCreateTeamForm = () => {
   const logoFile = logoFiles[0] || null;
   const logoPreviewUrl = logoPreviewUrls[0] || null;
 
-  // Hook para Imagens do Campo (máximo 5 arquivos)
+  const fieldImagesHook = useImageUpload(5);
+
   const {
     files: fieldImageFiles,
-    previews: fieldImagePreviewUrls,
-    addFiles: addFieldImageFiles,
-    removeFile: removeFieldImage,
     uploadFiles: uploadFieldImageFiles,
     resetFiles: resetFieldImageFiles,
-  } = useImageUpload(5);
+  } = fieldImagesHook;
 
   const [loading, setLoading] = useState(false);
 
@@ -161,6 +159,7 @@ export const useCreateTeamForm = () => {
         floorType,
         hasLockerRoom,
         hasDrinkingFountain,
+        fieldImagesHook,
         hasGrandstand,
         observations: fieldObs,
         images: fieldImageUrls || [],
@@ -249,10 +248,12 @@ export const useCreateTeamForm = () => {
 
     // Hook de Campo/Imagens
     fieldImageFiles,
-    fieldImagePreviewUrls,
-    addFieldImageFiles,
-    removeFieldImage,
+    // fieldImagePreviewUrls,
+    // addFieldImageFiles,
+    // removeFieldImage,
     isFieldAddress,
+
+    fieldImagesHook,
 
     // Hooks de Endereço
     teamLocation,
