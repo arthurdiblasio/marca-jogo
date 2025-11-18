@@ -33,6 +33,25 @@ export const useGooglePlaces = (initialAddress = "") => {
     }
   }, []);
 
+  const setInitialLocation = useCallback(
+    ({
+      address,
+      latitude,
+      longitude,
+    }: {
+      address: string;
+      latitude: number;
+      longitude: number;
+    }) => {
+      setAddress(address);
+      setLatitude(latitude);
+      setLongitude(longitude);
+      setSuggestions([]);
+      setShowSuggestions(false);
+    },
+    []
+  );
+
   // Busca sugestões de endereço
   const fetchSuggestions = useCallback(async (input: string) => {
     if (input.length < 3) {
@@ -93,5 +112,6 @@ export const useGooglePlaces = (initialAddress = "") => {
     handleAddressChange,
     handleSelectSuggestion,
     resetLocation,
+    setInitialLocation,
   };
 };

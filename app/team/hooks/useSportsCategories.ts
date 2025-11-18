@@ -35,8 +35,6 @@ export const useSportsCategories = () => {
           const response = await fetch(`/api/categories?sportId=${sportId}`);
           const data = await response.json();
           if (response.ok) {
-            console.log("Categorias carregadas:", data.categories);
-
             setAvailableCategories(
               data.categories.length ? data.categories : null
             );

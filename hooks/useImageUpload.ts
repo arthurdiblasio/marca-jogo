@@ -63,6 +63,12 @@ export const useImageUpload = (maxFiles: number) => {
     setPreviews([]);
   }, [previews]);
 
+  const setInitialUrls = (urls: string[]) => {
+    // coloca as URLs nas previews e limpa os arquivos
+    setPreviews(urls);
+    setFiles([]);
+  };
+
   // Função de upload para a API de múltiplos arquivos
   const uploadFiles = useCallback(async (): Promise<string[] | null> => {
     if (files.length === 0) return [];
@@ -74,7 +80,7 @@ export const useImageUpload = (maxFiles: number) => {
     });
 
     try {
-      const response = await fetch("/api/upload-logo", {
+      const response = await fetch("/api/upload-image", {
         // Mantendo a rota original
         method: "POST",
         body: formData,
@@ -94,5 +100,13 @@ export const useImageUpload = (maxFiles: number) => {
     }
   }, [files, resetFiles]);
 
-  return { files, previews, addFiles, removeFile, uploadFiles, resetFiles };
+  return {
+    files,
+    previews,
+    addFiles,
+    removeFile,
+    uploadFiles,
+    resetFiles,
+    setInitialUrls,
+  };
 };

@@ -12,3 +12,13 @@ export default withPWA({
     reactStrictMode: true,
   }
 );
+
+/** @type {import('next').NextConfig} */
+
+module.exports = {
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "5mb",
+    },
+  },
+};

@@ -25,12 +25,16 @@ export async function POST(request: Request) {
       foundedAt,
       latitude,
       longitude,
+      instagram,
+      teamImages,
       history,
       hasField,
       categoryId,
       fieldInfo,
       fullAddress,
     } = await request.json();
+
+    console.log("teamImages =>>", teamImages);
 
     const loggedInUser = await prisma.user.findUnique({
       where: { email: session.user.email },
@@ -76,11 +80,13 @@ export async function POST(request: Request) {
         latitude,
         longitude,
         categoryId,
+        instagram,
         ownerId: loggedInUser.id,
         foundedAt,
         history,
         hasField,
         fieldInfo,
+        photos: teamImages,
         fullAddress,
       },
     });

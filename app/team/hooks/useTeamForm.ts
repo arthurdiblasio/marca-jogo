@@ -1,5 +1,5 @@
 // src/hooks/useCreateTeamForm.ts
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { showToast } from "@/hooks/useToast";
 import { useSportsCategories } from "./useSportsCategories";
@@ -8,7 +8,7 @@ import { useFieldSurfaceTypes } from "@/hooks/useFieldSurfaceTypes";
 import { set } from "zod";
 import { useGooglePlaces } from "@/hooks/useGooglePlaces";
 
-export const useTeamForm = () => {
+export const useTeamForm = (teamId?: string) => {
   const router = useRouter();
   const {
     sportId,
@@ -41,6 +41,14 @@ export const useTeamForm = () => {
     resetFiles: resetFieldImageFiles,
   } = fieldImagesHook;
 
+  const teamImagesHook = useImageUpload(5);
+
+  const {
+    files: teamImagesFiles,
+    uploadFiles: uploadTeamImageFiles,
+    resetFiles: resetTeamImageFiles,
+  } = teamImagesHook;
+
   const [loading, setLoading] = useState(false);
 
   // Informações do Time
@@ -54,8 +62,8 @@ export const useTeamForm = () => {
   const [addressType, setAddressType] = useState<"field" | "team">("team");
   const isFieldAddress = addressType === "field";
 
-  const teamLocation = useGooglePlaces(); // Para endereço do Time
-  const fieldLocation = useGooglePlaces(); // Para endereço do Campo
+  const teamLocation = useGooglePlaces();
+  const fieldLocation = useGooglePlaces();
 
   // Informações do Campo/Quadra
   const [fieldName, setFieldName] = useState("");
@@ -64,6 +72,9 @@ export const useTeamForm = () => {
   const [hasDrinkingFountain, setHasDrinkingFountain] = useState("no");
   const [hasGrandstand, setHasGrandstand] = useState("no");
   const [fieldObs, setFieldObs] = useState("");
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [fieldImages, setFieldImages] = useState<string[]>([]);
+  const [teamImages, setTeamImages] = useState<string[]>([]);
 
   // Lista de anos para o select
   const years = useMemo(() => {
@@ -75,6 +86,73 @@ export const useTeamForm = () => {
     }
     return yearsList;
   }, []);
+
+  useEffect(() => {
+    if (!teamId) return;
+
+    async function loadTeam() {
+      try {
+        const id = teamId;
+        const res = await fetch(`/api/team/${id}`);
+        const data = await res.json();
+        if (!res.ok) {
+          showToast(data.error || "Erro ao carregar time.", "error");
+          return;
+        }
+
+        // Preenchimento
+        setName(data.name);
+        setAbbreviation(data.abbreviation);
+        setInstagram(data.instagram || "");
+        setFoundedAt(data.foundedAt);
+        setHistory(data.history || "");
+        setSportId(data.sportId);
+        setCategoryId(data.categoryId);
+        teamImagesHook.setInitialUrls(data.photos);
+        setTeamImages(data.photos);
+
+        if (data.hasField) {
+          setAddressType("field");
+          fieldLocation.setInitialLocation({
+            address: data.fieldInfo?.address || data.fullAddress,
+            latitude: data.latitude,
+            longitude: data.longitude,
+          });
+
+          if (data.fieldInfo) {
+            setFieldName(data.fieldInfo.name);
+            setFloorType(data.fieldInfo.floorType);
+            setHasLockerRoom(data.fieldInfo.hasLockerRoom);
+            setHasDrinkingFountain(data.fieldInfo.hasDrinkingFountain);
+            setHasGrandstand(data.fieldInfo.hasGrandstand);
+            setFieldObs(data.fieldInfo.observations || "");
+
+            if (data.fieldInfo?.images?.length) {
+              fieldImagesHook.setInitialUrls(data.fieldInfo.images);
+              setFieldImages(data.fieldInfo.images);
+            }
+          }
+        } else {
+          setAddressType("team");
+          teamLocation.setInitialLocation({
+            address: data.fullAddress,
+            latitude: data.latitude,
+            longitude: data.longitude,
+          });
+        }
+
+        // Logo existente
+        if (data.logo) {
+          setLogoPreview(data.logo);
+          logoPreviewUrls[0] = data.logo;
+        }
+      } catch {
+        showToast("Erro ao carregar dados do time.", "error");
+      }
+    }
+
+    loadTeam();
+  }, [teamId]);
 
   // Handler para trocar o tipo de endereço
   const handleAddressTypeChange = (type: "field" | "team") => {
@@ -142,6 +220,10 @@ export const useTeamForm = () => {
       logoUrl = urls[0];
     }
 
+    if (teamImagesFiles.length > 0) {
+      await uploadTeamImageFiles();
+    }
+
     // --- Upload de Imagens do Campo e Estruturação de FieldInfo ---
     let fieldInfo = undefined;
     if (isFieldAddress) {
@@ -162,42 +244,52 @@ export const useTeamForm = () => {
         fieldImagesHook,
         hasGrandstand,
         observations: fieldObs,
-        images: fieldImageUrls || [],
+        images: fieldImageUrls || fieldImages || [],
       };
     }
 
+    const payload = {
+      name,
+      sportId,
+      abbreviation,
+      logo: logoUrl || logoPreview || "",
+      foundedAt,
+      history,
+      hasField: isFieldAddress,
+      fieldInfo,
+      teamImagesHook,
+      fullAddress,
+      categoryId,
+      latitude,
+      longitude,
+      instagram,
+    };
+
     // --- Submissão Final ---
     try {
-      const response = await fetch("/api/team/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          sportId,
-          abbreviation,
-          logo: logoUrl,
-          foundedAt,
-          history,
-          hasField: isFieldAddress,
-          fieldInfo,
-          fullAddress,
-          categoryId,
-          latitude,
-          longitude,
-        }),
-      });
+      const response = await fetch(
+        teamId ? `/api/team/${teamId}` : `/api/team/create`,
+        {
+          method: teamId ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
 
       const data = await response.json();
 
       if (!response.ok) {
-        showToast(data.error || "Erro ao criar o time.", "error");
+        showToast(data.error || "Erro ao salvar.", "error");
         return;
       }
 
-      showToast("Time criado com sucesso", "success");
-      router.push("/dashboard");
+      showToast(
+        teamId ? "Time atualizado!" : "Time criado com sucesso!",
+        "success"
+      );
+      // router.push("/dashboard");
     } catch (err) {
-      showToast("Erro ao criar time", "error");
+      showToast("Erro ao salvar time", "error");
     } finally {
       setLoading(false);
     }
@@ -228,6 +320,8 @@ export const useTeamForm = () => {
     addressType,
     instagram,
     setInstagram,
+    teamImagesFiles,
+    teamImages,
 
     // Hooks de Esporte/Categoria
     sportId,
@@ -254,6 +348,8 @@ export const useTeamForm = () => {
     isFieldAddress,
 
     fieldImagesHook,
+
+    teamImagesHook,
 
     // Hooks de Endereço
     teamLocation,

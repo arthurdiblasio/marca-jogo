@@ -3,12 +3,46 @@ import { NextRequest, NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
+export async function GET(req: Request, context: { params: { id: string } }) {
+  try {
+    const { id } = await context.params;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "ID do time não fornecido." },
+        { status: 400 }
+      );
+    }
+
+    const team = await prisma.team.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!team) {
+      return NextResponse.json(
+        { error: "Time não encontrado." },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(team, { status: 200 });
+  } catch (error) {
+    console.error("Erro ao buscar o time:", error);
+    return NextResponse.json(
+      { error: "Erro interno do servidor ao buscar o time." },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { teamId: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { teamId } = await params;
+    const { id: teamId } = await params;
     const body = await request.json();
 
     const {
@@ -19,12 +53,16 @@ export async function PUT(
       foundedAt,
       history,
       hasField,
-      fieldName,
-      fieldAddress,
+      fieldInfo,
       latitude,
+      teamImages,
+      instagram,
       longitude,
       categoryId,
     } = body;
+
+    console.log("teamImagesHook =>>", teamImages);
+    console.log("fieldInfo =>>", fieldInfo);
 
     if (!teamId) {
       return NextResponse.json(
@@ -57,12 +95,13 @@ export async function PUT(
         logo,
         foundedAt,
         history,
+        instagram,
         hasField,
-        fieldName,
-        fieldAddress,
+        fieldInfo,
         latitude,
         longitude,
         categoryId,
+        photos: teamImages,
       },
     });
 

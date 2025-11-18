@@ -21,7 +21,7 @@ export function ImageMultiUpload({ hook, id, label, maxFiles = 5 }: ImageMultiUp
   };
 
   return (
-    <div className='col-span-full border-t pt-6'>
+    <div className='col-span-full pt-2'>
       <label htmlFor={id} className="block text-sm font-medium text-gray-700">
         {/* Usando o label e o limite dinâmico */}
         {label} (Máx. {maxFiles} fotos)

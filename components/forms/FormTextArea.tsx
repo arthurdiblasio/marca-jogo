@@ -2,8 +2,6 @@
 
 import React, { TextareaHTMLAttributes } from 'react';
 
-// 💡 Tipos de propriedades:
-// Para torná-lo flexível, estendemos as propriedades nativas do <textarea>
 interface FormTextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   id: string;
   label: string;
