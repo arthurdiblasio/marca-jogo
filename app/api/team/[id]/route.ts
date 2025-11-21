@@ -61,9 +61,6 @@ export async function PUT(
       categoryId,
     } = body;
 
-    console.log("teamImagesHook =>>", teamImages);
-    console.log("fieldInfo =>>", fieldInfo);
-
     if (!teamId) {
       return NextResponse.json(
         { error: "ID do time não fornecido." },

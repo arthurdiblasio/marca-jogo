@@ -220,15 +220,17 @@ export const useTeamForm = (teamId?: string) => {
       logoUrl = urls[0];
     }
 
-    if (teamImagesFiles.length > 0) {
-      await uploadTeamImageFiles();
-    }
+    const photos = teamImagesFiles.length
+      ? await uploadTeamImageFiles()
+      : teamImagesHook.previews;
 
     // --- Upload de Imagens do Campo e Estruturação de FieldInfo ---
     let fieldInfo = undefined;
     if (isFieldAddress) {
       const fieldImageUrls: string[] | null =
-        fieldImageFiles.length > 0 ? await uploadFieldImageFiles() : [];
+        fieldImageFiles.length > 0
+          ? await uploadFieldImageFiles()
+          : fieldImagesHook.previews;
 
       if (fieldImageFiles.length > 0 && !fieldImageUrls) {
         setLoading(false);
@@ -257,7 +259,7 @@ export const useTeamForm = (teamId?: string) => {
       history,
       hasField: isFieldAddress,
       fieldInfo,
-      teamImagesHook,
+      teamImages: photos || [],
       fullAddress,
       categoryId,
       latitude,
