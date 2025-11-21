@@ -63,11 +63,16 @@ export const useImageUpload = (maxFiles: number) => {
     setPreviews([]);
   }, [previews]);
 
-  const setInitialUrls = (urls: string[]) => {
-    // coloca as URLs nas previews e limpa os arquivos
-    setPreviews(urls);
-    setFiles([]);
-  };
+  const setInitialUrls = useCallback(
+    (urls: string[]) => {
+      previews.forEach((url) => {
+        URL.revokeObjectURL(url);
+      });
+      setPreviews(urls);
+      setFiles([]);
+    },
+    [previews]
+  );
 
   // Função de upload para a API de múltiplos arquivos
   const uploadFiles = useCallback(async (): Promise<string[] | null> => {

@@ -110,10 +110,10 @@ export default function TeamForm({ mode = 'create', teamId = undefined }: TeamFo
             )}
 
             <ImageMultiUpload
-              hook={teamImagesHook} // Passa o hook do useCreateTeamForm
+              hook={teamImagesHook}
               id="teamImages"
               label="Fotos do seu time (preferencialmente com uniforme de jogo)"
-              maxFiles={5}
+              maxFiles={4}
             />
 
             {/* História do Time */}
@@ -179,7 +179,7 @@ export default function TeamForm({ mode = 'create', teamId = undefined }: TeamFo
                   hook={fieldImagesHook} // Passa o hook do useCreateTeamForm
                   id="fieldImages"
                   label="Fotos do Campo/Quadra"
-                  maxFiles={5}
+                  maxFiles={4}
                 />
 
                 <FormTextArea id="fieldObs" label="Informações adicionais do campo/quadra (Opcional)" value={fieldObs} onChange={(e) => setFieldObs(e.target.value)} rows={4} />
