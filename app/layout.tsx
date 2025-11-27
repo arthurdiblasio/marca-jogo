@@ -36,6 +36,7 @@ export default function RootLayout({ children }) {
   const pathname = usePathname()
   const showSidebar = !excludedRoutes.includes(pathname);
 
+
   return (
     <html lang="en">
       <body>
