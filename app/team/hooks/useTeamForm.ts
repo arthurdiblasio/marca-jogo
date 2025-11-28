@@ -289,7 +289,7 @@ export const useTeamForm = (teamId?: string) => {
         teamId ? "Time atualizado!" : "Time criado com sucesso!",
         "success"
       );
-      // router.push("/dashboard");
+      router.push("/team/my-teams");
     } catch (err) {
       showToast("Erro ao salvar time", "error");
     } finally {

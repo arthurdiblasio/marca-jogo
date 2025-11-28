@@ -1,6 +1,8 @@
 // src/components/team/TeamFilters.tsx
 "use client";
 
+import { FormInput } from "@/components/forms/FormInput";
+import { OnlyInput } from "@/components/OnlyInput";
 import React from "react";
 
 export function TeamFilters(props: {
@@ -23,11 +25,12 @@ export function TeamFilters(props: {
           <svg className="w-4 h-4 text-gray-400 absolute left-3 top-3" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path d="M21 21l-4.35-4.35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          <input
+          <OnlyInput
+            id="name"
+            placeholder="Buscar por nome do time"
+            type="text"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar por nome do time"
-            className="pl-10 pr-3 py-3 w-full rounded-lg border border-gray-200 bg-white text-sm"
           />
         </div>
       </div>
@@ -36,7 +39,7 @@ export function TeamFilters(props: {
         <button
           type="button"
           onClick={() => setSportId(null)}
-          className={`px-3 py-1 text-sm rounded-full ${!sportId ? "bg-blue-600 text-white" : "bg-white border"}`}
+          className={`px-3 py-1 text-sm rounded-lg ${!sportId ? "bg-blue-600 text-white" : "bg-white border"}`}
         >
           Todos
         </button>
@@ -45,7 +48,7 @@ export function TeamFilters(props: {
             key={s.id}
             type="button"
             onClick={() => setSportId(s.id)}
-            className={`px-3 py-1 text-sm rounded-full ${sportId === s.id ? "bg-blue-600 text-white" : "bg-white border"}`}
+            className={`px-3 py-1 text-sm rounded-lg ${sportId === s.id ? "bg-blue-600 text-white" : "bg-white border"}`}
           >
             {s.name}
           </button>
@@ -56,7 +59,7 @@ export function TeamFilters(props: {
         <button
           type="button"
           onClick={() => setCategoryId(null)}
-          className={`px-3 py-1 text-sm rounded-full ${!categoryId ? "bg-blue-600 text-white" : "bg-white border"}`}
+          className={`px-3 py-1 text-sm rounded-lg ${!categoryId ? "bg-blue-600 text-white" : "bg-white border"}`}
         >
           Todas
         </button>
@@ -65,7 +68,7 @@ export function TeamFilters(props: {
             key={c.id}
             type="button"
             onClick={() => setCategoryId(c.id)}
-            className={`px-3 py-1 text-sm rounded-full ${categoryId === c.id ? "bg-blue-600 text-white" : "bg-white border"}`}
+            className={`px-3 py-1 text-sm rounded-lg ${categoryId === c.id ? "bg-blue-600 text-white" : "bg-white border"}`}
           >
             {c.name}
           </button>

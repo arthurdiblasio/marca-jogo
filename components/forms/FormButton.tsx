@@ -3,6 +3,7 @@ interface PrimaryButtonProps {
   loading?: boolean;
   type?: "button" | "submit" | "reset";
   disabled?: boolean;
+  onClick?: () => void;
 }
 
 export function PrimaryButton({ children, loading = false, type = "button", disabled = false }: PrimaryButtonProps) {

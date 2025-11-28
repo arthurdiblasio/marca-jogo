@@ -32,7 +32,7 @@ export function PageTitle({ children }: PageTitleProps) {
     };
 
     return (
-      <div className="sticky top-0 z-40 bg-white px-4 py-3 mb-3 flex items-center justify-between">
+      <div className="sticky top-0 z-40 bg-white px-4 p-6 flex items-center justify-between">
 
         {/* Botão voltar */}
         <button
@@ -55,7 +55,7 @@ export function PageTitle({ children }: PageTitleProps) {
     )
   } else if (!isMobile) {
     return (
-      <p className="text-center text-2xl font-bold text-gray-800 mb-2">
+      <p className="text-center text-2xl font-bold text-gray-800 mb-6">
         {children}
       </p>
     )

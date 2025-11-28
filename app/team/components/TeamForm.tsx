@@ -55,7 +55,7 @@ export default function TeamForm({ mode = 'create', teamId = undefined }: TeamFo
 
   return (
     <div className="flex min-h-screen bg-gray-100 mb-12 justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-8xl m-4">
+      <div className="bg-white p-4 rounded-lg shadow-lg w-full max-w-8xl m-2">
         <PageTitle>
           {mode === "create" ? "Criar Novo Time" : "Editar Time"}
         </PageTitle>
@@ -108,13 +108,13 @@ export default function TeamForm({ mode = 'create', teamId = undefined }: TeamFo
                 <img src={logoPreviewUrl} alt="Pré-visualização da Logo" className="h-32 w-32 object-contain rounded-md border border-gray-300" />
               </div>
             )}
-
-            <ImageMultiUpload
+            {/* eimplementar upload de múltiplas imagens do time posteriomente */}
+            {/* <ImageMultiUpload
               hook={teamImagesHook}
               id="teamImages"
               label="Fotos do seu time (preferencialmente com uniforme de jogo)"
               maxFiles={4}
-            />
+            /> */}
 
             {/* História do Time */}
             <FormTextArea id='history' label='História (Opcional)' value={history} onChange={(e) => setHistory(e.target.value)} rows={3} />

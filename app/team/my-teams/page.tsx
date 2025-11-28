@@ -28,8 +28,8 @@ export default function MyTeamsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="max-w-3xl mx-auto">
+    <div className="flex min-h-screen bg-gray-100 mb-12 justify-center">
+      <div className="bg-white p-4 rounded-lg shadow-lg w-full max-w-8xl m-2">
 
         <PageTitle>Meus Times</PageTitle>
 
@@ -48,12 +48,18 @@ export default function MyTeamsPage() {
           {loading && <p className="text-center text-gray-500">Carregando...</p>}
           {error && <p className="text-center text-red-500">{error}</p>}
 
-          {!loading && teams.length === 0 && (
+          {!loading && teams.length === 0 && !q && (
             <div className="text-center py-12">
               <p className="text-gray-600">Você ainda não tem nenhum time.</p>
               <a href="/team/create" className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded-md">
                 Criar Time
               </a>
+            </div>
+          )}
+
+          {!loading && teams.length === 0 && q && (
+            <div className="text-center py-3">
+              <p className="text-gray-600">Nenhum time encontrado pelo nome "{q}"</p>
             </div>
           )}
 
