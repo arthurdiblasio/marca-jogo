@@ -15,7 +15,7 @@ import {
 
 const navItems = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
-  { name: 'Times', href: '/team', icon: ShieldHalf },
+  { name: 'Times', href: '/team/my-teams', icon: ShieldHalf },
   { name: 'Jogos', href: '/games', icon: Swords },
   { name: 'Perfil', href: '/profile', icon: Users }
 ];

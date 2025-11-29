@@ -4,7 +4,13 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const sports = ["Futebol", "Vôlei", "FIFA", "Basquete"];
+const sports = [
+  { name: "Futebol", durationMin: 90 },
+  { name: "Fut7 ou Fut6", durationMin: 90 },
+  { name: "Vôlei", durationMin: 90 },
+  { name: "FIFA", durationMin: 90 },
+  { name: "Basquete", durationMin: 90 },
+];
 const categoriesSoccer = [
   "Sub-10",
   "Sub-12",
@@ -39,13 +45,16 @@ async function main() {
     );
   }
 
-  for (const sportName of sports) {
+  for (const sport of sports) {
     await prisma.sport.upsert({
-      where: { name: sportName },
+      where: { name: sport.name },
       update: {},
-      create: { name: sportName },
+      create: {
+        name: sport.name,
+        durationMin: sport.durationMin,
+      },
     });
-    console.log(`Esporte "${sportName}" inserido ou atualizado.`);
+    console.log(`Esporte "${sport.name}" inserido ou atualizado.`);
   }
 
   const sportRecords = await prisma.sport.findMany();

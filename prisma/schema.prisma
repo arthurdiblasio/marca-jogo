@@ -15,11 +15,14 @@ datasource db {
 }
 
 model Sport {
-  id   String @id @default(cuid())
-  name String @unique
+  id          String @id @default(cuid())
+  name        String @unique
+  durationMin Int    @default(90)
 
-  teams      Team[]
-  categories Category[]
+  teams          Team[]
+  categories     Category[]
+  gameOffers     GameOffer[]
+  recurringGames RecurringGame[]
 }
 
 model Category {
@@ -27,8 +30,10 @@ model Category {
   name    String
   sportId String
 
-  sport Sport  @relation(fields: [sportId], references: [id])
-  teams Team[]
+  sport          Sport           @relation(fields: [sportId], references: [id])
+  teams          Team[]
+  gameOffers     GameOffer[]
+  recurringGames RecurringGame[]
 
   @@unique([sportId, name])
 }
@@ -74,12 +79,257 @@ model Team {
   ownerId String
   owner   User   @relation(fields: [ownerId], references: [id])
 
-  sportId    String
-  sport      Sport     @relation(fields: [sportId], references: [id])
-  category   Category? @relation(fields: [categoryId], references: [id])
-  categoryId String?
+  sportId          String
+  sport            Sport             @relation(fields: [sportId], references: [id])
+  category         Category?         @relation(fields: [categoryId], references: [id])
+  categoryId       String?
+  players          PlayerInTeam[]
+  homeGames        Game[]            @relation("HomeTeam")
+  awayGames        Game[]            @relation("AwayTeam")
+  gameOffers       GameOffer[]
+  applicationsSent GameApplication[] @relation("ApplicationsByTeam")
+  recurringGames   RecurringGame[]
+  gameEvents       GameEvent[]
+  gameTeamStats    GameTeamStats[]
+  playerGameStats  PlayerGameStats[]
 
   @@unique([ownerId, name, sportId])
+}
+
+model Player {
+  id       String  @id @default(uuid())
+  name     String
+  nickname String?
+  photo    String?
+
+  teams  PlayerInTeam[]
+  stats  PlayerGameStats[]
+  events GameEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PlayerInTeam {
+  id String @id @default(uuid())
+
+  playerId String
+  player   Player @relation(fields: [playerId], references: [id])
+
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  joinedAt DateTime  @default(now())
+  leftAt   DateTime?
+}
+
+model GameOffer {
+  id String @id @default(uuid())
+
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  sportId String
+  sport   Sport  @relation(fields: [sportId], references: [id])
+
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  type GameType @default(AMISTOSO)
+
+  gameDate    DateTime
+  durationMin Int
+
+  fieldAddress String
+  latitude     Float?
+  longitude    Float?
+
+  fee         Float?
+  includesRef Boolean
+  refereeType RefereeType?
+
+  status GameOfferStatus @default(OPEN)
+
+  applications GameApplication[]
+  game         Game? // vira a partida após aceite
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum GameOfferStatus {
+  OPEN
+  PENDING
+  CONFIRMED
+  CANCELED
+  EXPIRED
+  PLAYED
+}
+
+enum GameType {
+  AMISTOSO
+  FESTIVAL
+  CAMPEONATO
+}
+
+enum RefereeType {
+  SOLO
+  TRIO
+}
+
+model GameApplication {
+  id String @id @default(uuid())
+
+  offerId String
+  offer   GameOffer @relation(fields: [offerId], references: [id])
+
+  applicantTeamId String
+  applicantTeam   Team   @relation("ApplicationsByTeam", fields: [applicantTeamId], references: [id])
+
+  message String?
+  status  ApplicationStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+}
+
+enum ApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model Game {
+  id String @id @default(uuid())
+
+  offerId String    @unique
+  offer   GameOffer @relation(fields: [offerId], references: [id])
+
+  homeTeamId String
+  homeTeam   Team   @relation("HomeTeam", fields: [homeTeamId], references: [id])
+
+  awayTeamId String
+  awayTeam   Team   @relation("AwayTeam", fields: [awayTeamId], references: [id])
+
+  homeScore Int?
+  awayScore Int?
+
+  startedAt  DateTime?
+  finishedAt DateTime?
+
+  events      GameEvent[]
+  teamStats   GameTeamStats[]
+  playerStats PlayerGameStats[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model GameEvent {
+  id String @id @default(uuid())
+
+  gameId String
+  game   Game   @relation(fields: [gameId], references: [id])
+
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  playerId String
+  player   Player @relation(fields: [playerId], references: [id])
+
+  minute Int?
+  type   EventType
+  value  Float?
+
+  createdAt DateTime @default(now())
+}
+
+enum EventType {
+  GOAL
+  ASSIST
+  YELLOW
+  RED
+  RATING
+}
+
+model GameTeamStats {
+  id String @id @default(uuid())
+
+  gameId String
+  game   Game   @relation(fields: [gameId], references: [id])
+
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  isHome Boolean
+
+  goals        Int
+  goalsAgainst Int
+  result       GameResult
+
+  createdAt DateTime @default(now())
+}
+
+enum GameResult {
+  WIN
+  DRAW
+  LOSS
+}
+
+model PlayerGameStats {
+  id String @id @default(uuid())
+
+  gameId String
+  game   Game   @relation(fields: [gameId], references: [id])
+
+  playerId String
+  player   Player @relation(fields: [playerId], references: [id])
+
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  goals   Int    @default(0)
+  assists Int    @default(0)
+  yellow  Int    @default(0)
+  red     Int    @default(0)
+  rating  Float?
+
+  shirtNumber Int?
+
+  createdAt DateTime @default(now())
+}
+
+model RecurringGame {
+  id String @id @default(uuid())
+
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  weekday     Int // 0=domingo ... 6=sábado
+  time        String // "10:00"
+  durationMin Int
+
+  sportId String
+  sport   Sport  @relation(fields: [sportId], references: [id])
+
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  weeksAhead Int?
+  untilDate  DateTime?
+
+  status RecurringStatus @default(PENDING)
+  notes  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum RecurringStatus {
+  PENDING
+  GENERATING
+  COMPLETED
+  PAUSED
+  CANCELED
 }
 
 model FieldSurfaceTypes {
