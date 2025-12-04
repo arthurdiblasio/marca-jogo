@@ -1,111 +1,119 @@
 import prisma from "@/utils/prisma";
 import { NextResponse } from "next/server";
 
-// TURNOS
+/**
+ * TURNOS definidos em horas (inteiros)
+ * morning: 06:00 - 11:59 (6–12)
+ * afternoon: 11:00 - 18:59 (11–19)
+ * night: 17:00 - 23:59 (17–24)
+ */
 const TURNO = {
-  morning: { start: "06:00", end: "12:00" },
-  afternoon: { start: "11:00", end: "19:00" },
-  night: { start: "17:00", end: "23:59" },
+  morning: { start: 6, end: 12 },
+  afternoon: { start: 11, end: 19 },
+  night: { start: 17, end: 24 },
 };
+
+// Parse "HH:mm" → {h, m}
+function parseTimeToHM(time: string) {
+  const [hStr, mStr] = time.split(":");
+  return { h: Number(hStr ?? 0), m: Number(mStr ?? 0) };
+}
+
+// Extração rápido de hora/minuto do Date
+function gameDateToHM(date: string | Date) {
+  const d = typeof date === "string" ? new Date(date) : date;
+  return { h: d.getHours(), m: d.getMinutes() };
+}
+
+// Validação de sobreposição de turno
+function overlapsTurn(
+  startH: number,
+  startM: number,
+  durationMin: number,
+  turnoStartH: number,
+  turnoEndH: number
+) {
+  const startMinutes = startH * 60 + startM;
+  const endMinutes = startMinutes + durationMin;
+
+  const turnoStart = turnoStartH * 60;
+  const turnoEnd = turnoEndH * 60; // exclusivo
+
+  // overlap se houver interseção entre [start, end] e [turnoStart, turnoEnd]
+  return endMinutes > turnoStart && startMinutes < turnoEnd;
+}
 
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
 
+    // -----------------------------
+    // FILTROS BÁSICOS
+    // -----------------------------
     const sportId = searchParams.get("sportId") ?? undefined;
     const categoryId = searchParams.get("categoryId") ?? undefined;
     const modalityId = searchParams.get("modalityId") ?? undefined;
     const gender = searchParams.get("gender") ?? undefined;
-    const date = searchParams.get("date") ?? undefined;
-    const weekday = searchParams.get("weekday") ?? undefined;
-    const dayOfMonth = searchParams.get("dayOfMonth") ?? undefined;
-    const time = searchParams.get("time") ?? undefined;
-    const turno = searchParams.get("turno") as
+
+    // -----------------------------
+    // FILTROS DE DATA/TEMPO
+    // -----------------------------
+    const date = searchParams.get("date") ?? undefined; // yyyy-mm-dd
+    const weekday = searchParams.get("weekday") ?? undefined; // 0 = domingo
+    const dayOfMonth = searchParams.get("dayOfMonth") ?? undefined; // 1–31
+    const time = searchParams.get("time") ?? undefined; // HH:mm
+    const turno = (searchParams.get("turno") ?? undefined) as
       | "morning"
       | "afternoon"
       | "night"
       | undefined;
 
-    // Construção dinâmica do filtro
-    const where: any = {
-      status: "OPEN",
-    };
+    // -----------------------------
+    // PAGINAÇÃO CONTROLADA PELO FRONT
+    // -----------------------------
+    const page = Math.max(1, Number(searchParams.get("page") ?? "1"));
+    const pageSize = Math.min(
+      100,
+      Math.max(5, Number(searchParams.get("pageSize") ?? "20"))
+    );
+
+    // -----------------------------
+    // LIMITADOR DE SCAN NO BD
+    // -----------------------------
+    const lookaheadDays = Math.min(
+      180,
+      Math.max(7, Number(searchParams.get("lookaheadDays") ?? "90"))
+    );
+
+    // -----------------------------
+    // WHERE para Prisma (eficiente)
+    // -----------------------------
+    const where: any = { status: "OPEN" };
 
     if (sportId) where.sportId = sportId;
     if (categoryId) where.categoryId = categoryId;
     if (modalityId) where.modalityId = modalityId;
     if (gender) where.gender = gender;
 
-    // Filtro por data exata (yyyy-mm-dd)
+    // Filtro por data exata
     if (date) {
       const start = new Date(`${date}T00:00:00`);
-      const end = new Date(`${date}T23:59:59`);
+      const end = new Date(`${date}T23:59:59.999`);
       where.gameDate = { gte: start, lte: end };
+    } else {
+      // Se houver filtros de tempo, limitamos a um range de datas
+      const needsTimeLimit = Boolean(time || turno || weekday || dayOfMonth);
+      if (needsTimeLimit) {
+        const now = new Date();
+        const endWindow = new Date(now.getTime() + lookaheadDays * 86400000);
+        where.gameDate = { gte: now, lte: endWindow };
+      }
     }
 
-    // Filtro por dia do mês
-    if (dayOfMonth && !date) {
-      where.AND = [
-        ...(where.AND ?? []),
-        {
-          AND: [
-            { gameDate: { gte: new Date() } },
-            {
-              // filtra jogos futuros com mesmo dia
-              gameDate: {
-                equals: undefined, // filtramos depois via JavaScript
-              },
-            },
-          ],
-        },
-      ];
-    }
-
-    // Filtro por horário exato
-    if (time) {
-      where.AND = [
-        ...(where.AND ?? []),
-        {
-          OR: [
-            {
-              gameDate: {
-                gte: new Date(`1970-01-01T${time}:00`),
-                lte: new Date(`1970-01-01T${time}:00`),
-              },
-            },
-          ],
-        },
-      ];
-    }
-
-    // Filtro por turno
-    if (turno) {
-      const selected = TURNO[turno];
-
-      where.AND = [
-        ...(where.AND ?? []),
-        {
-          OR: [
-            {
-              AND: [
-                {
-                  gameDate: {
-                    gte: new Date(`1970-01-01T${selected.start}:00`),
-                  },
-                },
-                {
-                  gameDate: {
-                    lte: new Date(`1970-01-01T${selected.end}:00`),
-                  },
-                },
-              ],
-            },
-          ],
-        },
-      ];
-    }
-
-    // Faz a consulta
+    // -----------------------------
+    // BUSCA PRIMÁRIA NO BANCO (limitada)
+    // -----------------------------
+    const maxFetch = 2000; // Limite de proteção
     const offers = await prisma.gameOffer.findMany({
       where,
       include: {
@@ -115,19 +123,71 @@ export async function GET(req: Request) {
         category: true,
       },
       orderBy: { gameDate: "asc" },
+      take: maxFetch,
     });
 
-    // FILTRO POR DIA DO MÊS (feito após consulta)
+    // =====================================================
+    // FILTROS EM JS — Prisma não consegue filtrá-los direto
+    // =====================================================
     let filtered = offers;
 
-    if (dayOfMonth && !date) {
-      filtered = offers.filter((o) => {
-        const d = new Date(o.gameDate).getDate();
-        return d === Number(dayOfMonth);
+    // Horário exato
+    if (time) {
+      const { h: qh, m: qm } = parseTimeToHM(time);
+      filtered = filtered.filter((o) => {
+        const { h, m } = gameDateToHM(o.gameDate);
+        return h === qh && m === qm;
       });
     }
 
-    return NextResponse.json(filtered);
+    // Dia da semana (0 = domingo)
+    if (weekday) {
+      const wk = Number(weekday);
+      filtered = filtered.filter((o) => new Date(o.gameDate).getDay() === wk);
+    }
+
+    // Dia do mês (1–31)
+    if (dayOfMonth) {
+      const dm = Number(dayOfMonth);
+      filtered = filtered.filter((o) => new Date(o.gameDate).getDate() === dm);
+    }
+
+    // Turno (considerando duração da partida)
+    if (turno) {
+      const { start, end } = TURNO[turno];
+      filtered = filtered.filter((o) => {
+        const { h, m } = gameDateToHM(o.gameDate);
+        const duration = typeof o.durationMin === "number" ? o.durationMin : 90;
+        return overlapsTurn(h, m, duration, start, end);
+      });
+    }
+
+    // =====================================================
+    // PAGINAÇÃO (pós-filtros)
+    // =====================================================
+    const total = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+    const startIndex = (page - 1) * pageSize;
+    const paged = filtered.slice(startIndex, startIndex + pageSize);
+
+    return NextResponse.json({
+      data: paged,
+      pagination: {
+        total,
+        page,
+        pageSize,
+        countOnPage: paged.length,
+        totalPages,
+      },
+      meta: {
+        appliedLookaheadDays:
+          !date && (time || turno || weekday || dayOfMonth)
+            ? lookaheadDays
+            : null,
+        fetchedFromDb: offers.length,
+      },
+    });
   } catch (err) {
     console.error(err);
     return NextResponse.json(
