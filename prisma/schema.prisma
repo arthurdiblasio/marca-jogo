@@ -57,7 +57,7 @@ model User {
 }
 
 model Team {
-  id           String   @id @default(uuid())
+  id           String     @id @default(uuid())
   name         String
   abbreviation String?
   logo         String?
@@ -70,11 +70,12 @@ model Team {
   neighborhood String?
   latitude     Float?
   longitude    Float?
-  hasField     Boolean  @default(false)
+  hasField     Boolean    @default(false)
   fullAddress  String?
+  gender       GameGender @default(MALE)
   fieldInfo    Json?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
   ownerId String
   owner   User   @relation(fields: [ownerId], references: [id])
@@ -137,6 +138,8 @@ model GameOffer {
 
   type GameType @default(AMISTOSO)
 
+  gender GameGender @default(MALE)
+
   gameDate    DateTime
   durationMin Int
 
@@ -155,6 +158,12 @@ model GameOffer {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum GameGender {
+  MALE // masculino
+  FEMALE // feminino
+  MIXED // misto
 }
 
 enum GameOfferStatus {
@@ -219,6 +228,7 @@ model Game {
   events      GameEvent[]
   teamStats   GameTeamStats[]
   playerStats PlayerGameStats[]
+  gender      GameGender
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
