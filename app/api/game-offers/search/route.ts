@@ -51,9 +51,25 @@ export async function GET(req: Request) {
     // FILTROS BÁSICOS
     // -----------------------------
     const sportId = searchParams.get("sportId") ?? undefined;
-    const categoryId = searchParams.get("categoryId") ?? undefined;
-    const modalityId = searchParams.get("modalityId") ?? undefined;
     const gender = searchParams.get("gender") ?? undefined;
+    const modalityId = searchParams.get("modalityId") ?? undefined;
+
+    // Se faltar qualquer um → erro
+    if (!sportId || !modalityId || !gender) {
+      return NextResponse.json(
+        {
+          error: "Esporte, modalidade e gênero são obrigatórios.",
+          missing: {
+            sportId: !sportId,
+            modalityId: !modalityId,
+            gender: !gender,
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    const categoryId = searchParams.get("categoryId") ?? undefined;
 
     // -----------------------------
     // FILTROS DE DATA/TEMPO
