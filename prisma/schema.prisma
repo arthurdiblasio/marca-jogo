@@ -23,6 +23,24 @@ model Sport {
   categories     Category[]
   gameOffers     GameOffer[]
   recurringGames RecurringGame[]
+  gameModalities GameModality[]
+}
+
+model GameModality {
+  id            String  @id @default(uuid())
+  name          String // ex: "Futebol 11", "Fut7", "Futsal"
+  description   String? // detalhes para o usuário
+  players       Int // jogadores totais ex: 11, 7, 6, 5
+  onField       Int // jogadores na linha (excluindo goleiro)
+  hasGoalkeeper Boolean @default(true)
+
+  sportId String
+  sport   Sport  @relation(fields: [sportId], references: [id])
+
+  gameOffers GameOffer[]
+  games      Game[]
+
+  createdAt DateTime @default(now())
 }
 
 model Category {
@@ -154,7 +172,9 @@ model GameOffer {
   status GameOfferStatus @default(OPEN)
 
   applications GameApplication[]
-  game         Game? // vira a partida após aceite
+  game         Game?
+  modalityId   String?
+  modality     GameModality?     @relation(fields: [modalityId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -230,8 +250,9 @@ model Game {
   playerStats PlayerGameStats[]
   gender      GameGender
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt  DateTime      @default(now())
+  modalityId String?
+  modality   GameModality? @relation(fields: [modalityId], references: [id])
 }
 
 model GameEvent {

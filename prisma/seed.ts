@@ -1,5 +1,3 @@
-// prisma/seed.ts
-
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -77,6 +75,46 @@ async function main() {
         `Categoria "${category}" para o esporte "${sportSoccer.name}" inserida/atualizada.`
       );
     }
+  }
+
+  if (sportSoccer) {
+    await prisma.gameModality.createMany({
+      data: [
+        {
+          name: "Futebol Campo",
+          description: "10 jogadores na linha + goleiro. Campo grande.",
+          players: 11,
+          onField: 10,
+          hasGoalkeeper: true,
+          sportId: sportSoccer?.id,
+        },
+        {
+          name: "Fut 7",
+          description: "6 jogadores na linha + goleiro. Campo society.",
+          players: 7,
+          onField: 6,
+          hasGoalkeeper: true,
+          sportId: sportSoccer?.id,
+        },
+        {
+          name: "Futebol 6",
+          description:
+            "5 jogadores na linha + goleiro. Campo society reduzido.",
+          players: 6,
+          onField: 5,
+          hasGoalkeeper: true,
+          sportId: sportSoccer?.id,
+        },
+        {
+          name: "Futsal",
+          description: "4 na linha + goleiro. Quadra oficial.",
+          players: 5,
+          onField: 4,
+          hasGoalkeeper: true,
+          sportId: sportSoccer?.id,
+        },
+      ],
+    });
   }
 
   console.log("Processo de seed concluído.");
