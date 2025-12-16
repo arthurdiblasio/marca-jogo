@@ -56,9 +56,14 @@ export async function GET(
         id: true,
         name: true,
         abbreviation: true,
+        latitude: true,
+        longitude: true,
+        hasField: true,
+        fieldInfo: true,
+
         logo: true,
         sport: {
-          select: { id: true, name: true },
+          select: { id: true, name: true, durationMin: true },
         },
         category: {
           select: { id: true, name: true },

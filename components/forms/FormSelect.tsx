@@ -31,7 +31,7 @@ export const FormSelect: React.FC<FormSelectProps> = ({
     : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500';
 
   return (
-    <div>
+    <div className='mt-2'>
       <label htmlFor={id} className="block text-sm font-medium text-gray-700">
         {label}
       </label>

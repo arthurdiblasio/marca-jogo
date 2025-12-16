@@ -24,7 +24,7 @@ export const FormInput: React.FC<FormInputProps> = ({
     : 'rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500'; // Borda normal
 
   return (
-    <div>
+    <div className='mt-2'>
       <label htmlFor={id} className="block text-sm font-medium text-gray-700">
         {label}
       </label>

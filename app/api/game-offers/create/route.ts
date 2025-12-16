@@ -86,6 +86,8 @@ export async function POST(req: Request) {
       gameDate: rawGameDate,
       durationMin: payloadDurationMin,
       fee,
+      includesRef,
+      refereeType,
       fieldInfo: payloadFieldInfo,
     } = body as {
       teamId?: string;
@@ -95,6 +97,8 @@ export async function POST(req: Request) {
       durationMin?: number;
       fee?: number;
       fieldInfo?: any;
+      includesRef: boolean;
+      refereeType: "SOLO" | "TRIO";
     };
 
     // validações básicas
@@ -158,12 +162,11 @@ export async function POST(req: Request) {
 
     // se o payload enviou sportId/gender/modality diferente do time, validamos ou rejeitamos
     // (a regra definida: o esporte e gênero vieram do time; modalidade o usuário escolhe)
-    if (payloadCategoryId && payloadCategoryId !== team.categoryId) {
+    if (categoryId && categoryId !== team.categoryId) {
       // OK - usuário permite override de category
     }
 
     // modalityId must be provided (or the payload included it). We'll validate existence below.
-    const modalityId = payloadModalityId;
     if (!modalityId) {
       return NextResponse.json(
         { error: "modalityId é obrigatório" },
@@ -247,7 +250,6 @@ export async function POST(req: Request) {
     }
 
     // --- categoria final (default do time, override permitido) ---
-    const categoryId = payloadCategoryId ?? team.categoryId ?? null;
 
     // --- checagem de conflito de horários (mesmo time) ---
     // Consideramos conflito se existir uma oferta (não cancelada) do mesmo time
@@ -298,19 +300,16 @@ export async function POST(req: Request) {
         sportId,
         modalityId,
         gender,
-        categoryId: categoryId ?? null,
-        gameDate: gameDate, // Date object is allowed
+        categoryId: categoryId ?? team.categoryId ?? null,
+        gameDate,
         durationMin,
         fee: fee ?? 0,
         fieldAddress: fieldInfoToSave.address ?? null,
         latitude: fieldInfoToSave.latitude ?? null,
         longitude: fieldInfoToSave.longitude ?? null,
-        includesRef, // default true; adjust if you want to allow config
-        refereeType, // default AUTO; adjust if you want to allow config
+        includesRef,
+        refereeType,
         status: "OPEN",
-        // createdBy / owner fields if you have them, e.g. createdById: userId
-        // Se seu modelo tem ownerId, ajuste aqui:
-        // createdById: userId
       },
     });
 
