@@ -1,213 +1,187 @@
-import prisma from "@/utils/prisma";
 import { NextResponse } from "next/server";
+import prisma from "@/utils/prisma";
 
-/**
- * TURNOS definidos em horas (inteiros)
- * morning: 06:00 - 11:59 (6–12)
- * afternoon: 11:00 - 18:59 (11–19)
- * night: 17:00 - 23:59 (17–24)
- */
-const TURNO = {
-  morning: { start: 6, end: 12 },
-  afternoon: { start: 11, end: 19 },
-  night: { start: 17, end: 24 },
-};
-
-// Parse "HH:mm" → {h, m}
-function parseTimeToHM(time: string) {
-  const [hStr, mStr] = time.split(":");
-  return { h: Number(hStr ?? 0), m: Number(mStr ?? 0) };
-}
-
-// Extração rápido de hora/minuto do Date
-function gameDateToHM(date: string | Date) {
-  const d = typeof date === "string" ? new Date(date) : date;
-  return { h: d.getHours(), m: d.getMinutes() };
-}
-
-// Validação de sobreposição de turno
-function overlapsTurn(
-  startH: number,
-  startM: number,
-  durationMin: number,
-  turnoStartH: number,
-  turnoEndH: number
-) {
-  const startMinutes = startH * 60 + startM;
-  const endMinutes = startMinutes + durationMin;
-
-  const turnoStart = turnoStartH * 60;
-  const turnoEnd = turnoEndH * 60; // exclusivo
-
-  // overlap se houver interseção entre [start, end] e [turnoStart, turnoEnd]
-  return endMinutes > turnoStart && startMinutes < turnoEnd;
-}
+const TURNOS = {
+  morning: { start: "06:00", end: "12:00" },
+  afternoon: { start: "11:00", end: "19:00" },
+  night: { start: "17:00", end: "23:59" },
+} as const;
 
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
 
     // -----------------------------
-    // FILTROS BÁSICOS
+    // 📌 Filtros obrigatórios
     // -----------------------------
-    const sportId = searchParams.get("sportId") ?? undefined;
-    const gender = searchParams.get("gender") ?? undefined;
-    const modalityId = searchParams.get("modalityId") ?? undefined;
+    const sportId = searchParams.get("sportId");
+    const modalityId = searchParams.get("modalityId");
+    const gender = searchParams.get("gender");
 
-    // Se faltar qualquer um → erro
     if (!sportId || !modalityId || !gender) {
       return NextResponse.json(
-        {
-          error: "Esporte, modalidade e gênero são obrigatórios.",
-          missing: {
-            sportId: !sportId,
-            modalityId: !modalityId,
-            gender: !gender,
-          },
-        },
+        { error: "sportId, modalityId e gender são obrigatórios." },
         { status: 400 }
       );
     }
 
+    // -----------------------------
+    // 📌 Filtros opcionais
+    // -----------------------------
     const categoryId = searchParams.get("categoryId") ?? undefined;
-
-    // -----------------------------
-    // FILTROS DE DATA/TEMPO
-    // -----------------------------
-    const date = searchParams.get("date") ?? undefined; // yyyy-mm-dd
-    const weekday = searchParams.get("weekday") ?? undefined; // 0 = domingo
-    const dayOfMonth = searchParams.get("dayOfMonth") ?? undefined; // 1–31
-    const time = searchParams.get("time") ?? undefined; // HH:mm
-    const turno = (searchParams.get("turno") ?? undefined) as
+    const date = searchParams.get("date") ?? undefined;
+    const weekday = searchParams.get("weekday") ?? undefined;
+    const dayOfMonth = searchParams.get("dayOfMonth") ?? undefined;
+    const time = searchParams.get("time") ?? undefined;
+    const turno = searchParams.get("turno") as
       | "morning"
       | "afternoon"
       | "night"
       | undefined;
 
-    // -----------------------------
-    // PAGINAÇÃO CONTROLADA PELO FRONT
-    // -----------------------------
+    // Paginação
     const page = Math.max(1, Number(searchParams.get("page") ?? "1"));
     const pageSize = Math.min(
       100,
       Math.max(5, Number(searchParams.get("pageSize") ?? "20"))
     );
+    const offset = (page - 1) * pageSize;
 
     // -----------------------------
-    // LIMITADOR DE SCAN NO BD
+    // 📌 WHERE dinâmico
     // -----------------------------
-    const lookaheadDays = Math.min(
-      180,
-      Math.max(7, Number(searchParams.get("lookaheadDays") ?? "90"))
-    );
+    const conditions: string[] = [];
+    const params: any[] = [];
 
-    // -----------------------------
-    // WHERE para Prisma (eficiente)
-    // -----------------------------
-    const where: any = { status: "OPEN" };
+    // filtros obrigatórios
+    params.push(sportId);
+    conditions.push(`go."sportId" = $${params.length}`);
 
-    if (sportId) where.sportId = sportId;
-    if (categoryId) where.categoryId = categoryId;
-    if (modalityId) where.modalityId = modalityId;
-    if (gender) where.gender = gender;
+    params.push(modalityId);
+    conditions.push(`go."modalityId" = $${params.length}`);
 
-    // Filtro por data exata
+    params.push(gender);
+    conditions.push(`go."gender" = $${params.length}`);
+
+    // status OPEN
+    conditions.push(`go."status" = 'OPEN'`);
+
+    // categoria
+    if (categoryId) {
+      params.push(categoryId);
+      conditions.push(`go."categoryId" = $${params.length}`);
+    }
+
+    // data exata
     if (date) {
-      const start = new Date(`${date}T00:00:00`);
-      const end = new Date(`${date}T23:59:59.999`);
-      where.gameDate = { gte: start, lte: end };
+      params.push(`${date}T00:00:00`);
+      params.push(`${date}T23:59:59`);
+      conditions.push(
+        `go."gameDate" BETWEEN $${params.length - 1} AND $${params.length}`
+      );
     } else {
-      // Se houver filtros de tempo, limitamos a um range de datas
-      const needsTimeLimit = Boolean(time || turno || weekday || dayOfMonth);
-      if (needsTimeLimit) {
-        const now = new Date();
-        const endWindow = new Date(now.getTime() + lookaheadDays * 86400000);
-        where.gameDate = { gte: now, lte: endWindow };
-      }
+      conditions.push(`go."gameDate" >= NOW()`);
     }
 
-    // -----------------------------
-    // BUSCA PRIMÁRIA NO BANCO (limitada)
-    // -----------------------------
-    const maxFetch = 2000; // Limite de proteção
-    const offers = await prisma.gameOffer.findMany({
-      where,
-      include: {
-        team: true,
-        modality: true,
-        sport: true,
-        category: true,
-      },
-      orderBy: { gameDate: "asc" },
-      take: maxFetch,
-    });
-
-    // =====================================================
-    // FILTROS EM JS — Prisma não consegue filtrá-los direto
-    // =====================================================
-    let filtered = offers;
-
-    // Horário exato
-    if (time) {
-      const { h: qh, m: qm } = parseTimeToHM(time);
-      filtered = filtered.filter((o) => {
-        const { h, m } = gameDateToHM(o.gameDate);
-        return h === qh && m === qm;
-      });
-    }
-
-    // Dia da semana (0 = domingo)
+    // dia da semana (0–6)
     if (weekday) {
-      const wk = Number(weekday);
-      filtered = filtered.filter((o) => new Date(o.gameDate).getDay() === wk);
+      params.push(Number(weekday));
+      conditions.push(`EXTRACT(DOW FROM go."gameDate") = $${params.length}`);
     }
 
-    // Dia do mês (1–31)
-    if (dayOfMonth) {
-      const dm = Number(dayOfMonth);
-      filtered = filtered.filter((o) => new Date(o.gameDate).getDate() === dm);
+    // dia do mês
+    if (dayOfMonth && !date) {
+      params.push(Number(dayOfMonth));
+      conditions.push(`EXTRACT(DAY FROM go."gameDate") = $${params.length}`);
     }
 
-    // Turno (considerando duração da partida)
+    // horário exato
+    if (time) {
+      params.push(time + ":00");
+      conditions.push(
+        `TO_CHAR(go."gameDate", 'HH24:MI:SS') = $${params.length}`
+      );
+    }
+
+    // turno
     if (turno) {
-      const { start, end } = TURNO[turno];
-      filtered = filtered.filter((o) => {
-        const { h, m } = gameDateToHM(o.gameDate);
-        const duration = typeof o.durationMin === "number" ? o.durationMin : 90;
-        return overlapsTurn(h, m, duration, start, end);
-      });
+      const t = TURNOS[turno];
+      params.push(t.start + ":00", t.end + ":00");
+
+      conditions.push(`
+        (
+          TO_CHAR(go."gameDate", 'HH24:MI:SS') >= $${params.length - 1}
+          AND
+          TO_CHAR(go."gameDate", 'HH24:MI:SS') <= $${params.length}
+        )
+      `);
     }
 
-    // =====================================================
-    // PAGINAÇÃO (pós-filtros)
-    // =====================================================
-    const total = filtered.length;
+    const whereSQL = conditions.length
+      ? `WHERE ${conditions.join(" AND ")}`
+      : "";
+
+    // -----------------------------
+    // 📌 SELECT ENRIQUECIDO
+    // -----------------------------
+    const sql = `
+      SELECT
+        go.*,
+
+        -- Dados do time
+        t.name AS "teamName",
+        t.logo AS "teamLogo",
+
+        -- Esporte, modalidade, categoria
+        s.name AS "sportName",
+        gm.name AS "modalityName",
+        c.name AS "categoryName",
+
+        -- Endereço do campo (campo JSON)
+        go."fieldInfo"->>'address' AS "fieldAddress",
+
+        -- Taxa do jogo
+        go.fee AS "fee"
+
+      FROM "GameOffer" go
+      JOIN "Team" t ON t.id = go."teamId"
+      JOIN "Sport" s ON s.id = go."sportId"
+      JOIN "GameModality" gm ON gm.id = go."modalityId"
+      LEFT JOIN "Category" c ON c.id = go."categoryId"
+      ${whereSQL}
+      ORDER BY go."gameDate" ASC
+      LIMIT ${pageSize}
+      OFFSET ${offset};
+    `;
+
+    const countSql = `
+      SELECT COUNT(*)::int AS total
+      FROM "GameOffer" go
+      ${whereSQL};
+    `;
+
+    const [offers, countResult] = await Promise.all([
+      prisma.$queryRawUnsafe(sql, ...params),
+      prisma.$queryRawUnsafe(countSql, ...params),
+    ]);
+
+    const total = countResult[0]?.total ?? 0;
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
-    const startIndex = (page - 1) * pageSize;
-    const paged = filtered.slice(startIndex, startIndex + pageSize);
-
     return NextResponse.json({
-      data: paged,
+      data: offers,
       pagination: {
-        total,
         page,
         pageSize,
-        countOnPage: paged.length,
+        total,
         totalPages,
-      },
-      meta: {
-        appliedLookaheadDays:
-          !date && (time || turno || weekday || dayOfMonth)
-            ? lookaheadDays
-            : null,
-        fetchedFromDb: offers.length,
+        countOnPage: offers.length,
       },
     });
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    console.error("API FIND GAMES ERROR:", error);
     return NextResponse.json(
-      { error: "Erro ao buscar jogos" },
+      { error: "Erro interno ao buscar jogos" },
       { status: 500 }
     );
   }

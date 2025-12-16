@@ -178,6 +178,15 @@ model GameOffer {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([gameDate])
+  @@index([sportId])
+  @@index([modalityId])
+  @@index([gender])
+  @@index([categoryId])
+  @@index([status])
+  @@index([sportId, modalityId, gender])
+  @@index([sportId, modalityId, gender, gameDate])
 }
 
 enum GameGender {
